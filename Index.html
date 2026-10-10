@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Mafia OS</title>
+    
+    <!-- Подключаем React, ReactDOM и Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Подключаем Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body { 
+            background-color: #020617; /* slate-950 */
+            color: #f8fafc; 
+            overflow-x: hidden; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        button { touch-action: manipulation; } /* Защита от двойного зума на мобилках */
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ВСТРОЕННЫЕ ИКОНКИ (Без зависимостей) ---
+        const iconsPaths = {
+            Shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+            Moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+            Sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+            RotateCcw: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+            Play: '<polygon points="5 3 19 12 5 21 5 3"/>',
+            Pause: '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
+            Square: '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>',
+            Skull: '<circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.56-1.25 2 2 0 0 0-.44-2.25l-1.2-1.25a7.92 7.92 0 0 0 1.1-6.17C16.1 5.92 13 3 9 3c-4.4 0-7.3 2.92-8.02 6.08a7.92 7.92 0 0 0 1.1 6.17l-1.2 1.25a2 2 0 0 0-.44 2.25A2 2 0 0 0 2 20h2"/>',
+            Eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+            Wand2: '<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/>',
+            AlertCircle: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+        };
+
+        const Icon = ({ name, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: iconsPaths[name] }} />
+        );
+
+        const Shield = (p) => <Icon name="Shield" {...p} />;
+        const Moon = (p) => <Icon name="Moon" {...p} />;
+        const Sun = (p) => <Icon name="Sun" {...p} />;
+        const RotateCcw = (p) => <Icon name="RotateCcw" {...p} />;
+        const Play = (p) => <Icon name="Play" {...p} />;
+        const Pause = (p) => <Icon name="Pause" {...p} />;
+        const Square = (p) => <Icon name="Square" {...p} />;
+        const Skull = (p) => <Icon name="Skull" {...p} />;
+        const Eye = (p) => <Icon name="Eye" {...p} />;
+        const Wand2 = (p) => <Icon name="Wand2" {...p} />;
+        const AlertCircle = (p) => <Icon name="AlertCircle" {...p} />;
+
+        // --- ИГРОВАЯ ЛОГИКА ---
+        const ROLES = {
+            CITIZEN: { id: 'CITIZEN', name: 'Мирный', color: 'text-slate-400', bg: 'bg-slate-400/10' },
+            MAFIA: { id: 'MAFIA', name: 'Мафия', color: 'text-rose-500', bg: 'bg-rose-500/10' },
+            DON: { id: 'DON', name: 'Дон', color: 'text-red-600', bg: 'bg-red-600/10' },
+            SHERIFF: { id: 'SHERIFF', name: 'Шериф', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+            DOCTOR: { id: 'DOCTOR', name: 'Доктор', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+            MANIAC: { id: 'MANIAC', name: 'Маньяк', color: 'text-orange-500', bg: 'bg-orange-500/10' },
+            BEAUTY: { id: 'BEAUTY', name: 'Красотка', color: 'text-fuchsia-500', bg: 'bg-fuchsia-500/10' },
+        };
+
+        const PHASES = { SETUP: 'SETUP', DAY: 'DAY', VOTING: 'VOTING', NIGHT: 'NIGHT', BRIEFING: 'BRIEFING' };
+
+        function MafiaOS() {
+            const [phase, setPhase] = useState(PHASES.SETUP);
+            const [dayCount, setDayCount] = useState(1);
+            const [players, setPlayers] = useState([]);
+            const [deck, setDeck] = useState({
+                total: 10,
+                roles: { MAFIA: 2, DON: 1, SHERIFF: 1, DOCTOR: 0, MANIAC: 0, BEAUTY: 0, CITIZEN: 6 }
+            });
+
+            const [nominations, setNominations] = useState([]);
+            const [votes, setVotes] = useState({});
+            const [nightActions, setNightActions] = useState({});
+            const [nightStep, setNightStep] = useState(0);
+            const [briefingData, setBriefingData] = useState(null);
+
+            const [timeLeft, setTimeLeft] = useState(0);
+            const [isTimerRunning, setIsTimerRunning] = useState(false);
+            const timerRef = useRef(null);
+            const maxTimeRef = useRef(60);
+
+            const [history, setHistory] = useState([]);
+
+            const saveToHistory = () => {
+                const currentState = JSON.stringify({ phase, dayCount, players, nominations, votes, nightActions, nightStep, briefingData });
+                setHistory(prev => [...prev.slice(-20), currentState]);
+            };
+
+            const undo = () => {
+                if (history.length === 0) return;
+                const s = JSON.parse(history[history.length - 1]);
+                setPhase(s.phase); setDayCount(s.dayCount); setPlayers(s.players);
+                setNominations(s.nominations); setVotes(s.votes); setNightActions(s.nightActions);
+                setNightStep(s.nightStep); setBriefingData(s.briefingData);
+                setHistory(prev => prev.slice(0, -1));
+            };
+
+            const autoBalance = () => {
+                const total = deck.total;
+                const mafiaCount = Math.floor(total / 3);
+                const don = deck.roles.DON > 0 ? 1 : 0;
+                const mafia = Math.max(0, mafiaCount - don);
+                const sheriff = deck.roles.SHERIFF > 0 ? 1 : 0;
+                const doctor = deck.roles.DOCTOR > 0 ? 1 : 0;
+                const maniac = deck.roles.MANIAC > 0 ? 1 : 0;
+                const beauty = deck.roles.BEAUTY > 0 ? 1 : 0;
+                const citizens = Math.max(0, total - (mafia + don + sheriff + doctor + maniac + beauty));
+                
+                setDeck({ total, roles: { MAFIA: mafia, DON: don, SHERIFF: sheriff, DOCTOR: doctor, MANIAC: maniac, BEAUTY: beauty, CITIZEN: citizens } });
+            };
+
+            const startGame = () => {
+                const rolePool = [];
+                Object.entries(deck.roles).forEach(([role, count]) => {
+                    for (let i = 0; i < count; i++) rolePool.push(role);
+                });
+                
+                for (let i = rolePool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [rolePool[i], rolePool[j]] = [rolePool[j], rolePool[i]];
+                }
+
+                setPlayers(rolePool.map((role, idx) => ({
+                    id: idx + 1, name: `Игрок ${idx + 1}`, role, isAlive: true, isExposed: false
+                })));
+                setPhase(PHASES.DAY);
+                setDayCount(1);
+                setHistory([]);
+            };
+
+            const handleNameChange = (id, newName) => {
+                setPlayers(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p));
+            };
+
+            useEffect(() => {
+                if (isTimerRunning && timeLeft > 0) {
+                    timerRef.current = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
+                } else if (timeLeft === 0) setIsTimerRunning(false);
+                return () => clearTimeout(timerRef.current);
+            }, [timeLeft, isTimerRunning]);
+
+            const startTimer = (secs) => {
+                maxTimeRef.current = secs;
+                setTimeLeft(secs);
+                setIsTimerRunning(true);
+            };
+
+            const toggleNomination = (playerId) => {
+                setNominations(prev => prev.includes(playerId) ? prev.filter(id => id !== playerId) : [...prev, playerId]);
+            };
+
+            const endDay = () => {
+                saveToHistory();
+                if (nominations.length > 0) {
+                    setPhase(PHASES.VOTING);
+                    const initialVotes = {};
+                    nominations.forEach(id => initialVotes[id] = 0);
+                    setVotes(initialVotes);
+                } else {
+                    startNight();
+                }
+            };
+
+            const addVote = (playerId, delta) => {
+                setVotes(prev => ({ ...prev, [playerId]: Math.max(0, (prev[playerId] || 0) + delta) }));
+            };
+
+            const calculateVoting = () => {
+                saveToHistory();
+                const maxVotes = Math.max(...Object.values(votes));
+                const leaders = Object.keys(votes).filter(id => votes[id] === maxVotes).map(Number);
+
+                if (leaders.length === 1) {
+                    setPlayers(prev => prev.map(p => p.id === leaders[0] ? { ...p, isAlive: false } : p));
+                    setNominations([]);
+                    startNight();
+                } else {
+                    setNominations(leaders);
+                    const newVotes = {};
+                    leaders.forEach(id => newVotes[id] = 0);
+                    setVotes(newVotes);
+                    alert("Автокатастрофа! Равенство голосов. Проведите переголосование.");
+                }
+            };
+
+            const getActiveNightRoles = () => {
+                const active = [];
+                const hasAlive = (roleId) => players.some(p => p.role === roleId && p.isAlive);
+                
+                if (hasAlive('BEAUTY')) active.push({ role: 'BEAUTY', action: 'Кого спасает Красотка?' });
+                if (hasAlive('MAFIA') || hasAlive('DON')) active.push({ role: 'MAFIA_GROUP', action: 'В кого стреляет Мафия?' });
+                if (hasAlive('MANIAC')) active.push({ role: 'MANIAC', action: 'В кого стреляет Маньяк?' });
+                if (hasAlive('DOCTOR')) active.push({ role: 'DOCTOR', action: 'Кого лечит Доктор?' });
+                if (hasAlive('SHERIFF')) active.push({ role: 'SHERIFF', action: 'Кого проверяет Шериф?' });
+                if (hasAlive('DON')) active.push({ role: 'DON', action: 'Кого проверяет Дон на Шерифа?' });
+                return active;
+            };
+
+            const nightOrder = getActiveNightRoles();
+
+            const startNight = () => {
+                setPhase(PHASES.NIGHT);
+                setNightActions({});
+                setNightStep(0);
+                setNominations([]);
+            };
+
+            const handleNightAction = (targetId) => {
+                const currentRole = nightOrder[nightStep].role;
+                const newActions = { ...nightActions, [currentRole]: targetId };
+                setNightActions(newActions);
+                
+                if (nightStep + 1 < nightOrder.length) setNightStep(prev => prev + 1);
+                else finishNight(newActions);
+            };
+
+            const finishNight = (actions) => {
+                saveToHistory();
+                let killed = [];
+                let saved = [];
+                let reports = [];
+
+                if (actions['BEAUTY']) saved.push(actions['BEAUTY']);
+                if (actions['DOCTOR']) saved.push(actions['DOCTOR']);
+                if (actions['MAFIA_GROUP'] && !saved.includes(actions['MAFIA_GROUP'])) killed.push(actions['MAFIA_GROUP']);
+                if (actions['MANIAC'] && !saved.includes(actions['MANIAC'])) killed.push(actions['MANIAC']);
+
+                if (actions['SHERIFF']) {
+                    const p = players.find(p => p.id === actions['SHERIFF']);
+                    reports.push(`Шериф проверил: ${p?.name} — ${p?.role === 'MAFIA' || p?.role === 'DON' ? 'Мафия' : 'Мирный'}.`);
+                }
+                if (actions['DON']) {
+                    const p = players.find(p => p.id === actions['DON']);
+                    reports.push(`Дон проверил: ${p?.name} — ${p?.role === 'SHERIFF' ? 'Шериф' : 'Не шериф'}.`);
+                }
+
+                const uniqueKilled = [...new Set(killed)];
+                setPlayers(prev => prev.map(p => uniqueKilled.includes(p.id) ? { ...p, isAlive: false } : p));
+                setBriefingData({ killedNames: uniqueKilled.map(id => players.find(p => p.id === id)?.name), reports });
+                setPhase(PHASES.BRIEFING);
+            };
+
+            return (
+                <div className="min-h-screen p-4 selection:bg-rose-500/30">
+                    <div className="max-w-4xl mx-auto h-full">
+                        
+                        {/* SETUP PHASE */}
+                        {phase === PHASES.SETUP && (
+                        <div className="max-w-xl mx-auto space-y-6 mt-10">
+                            <div className="text-center">
+                            <h1 className="text-3xl font-bold text-white tracking-wider">MAFIA OS</h1>
+                            <p className="text-slate-400 text-sm">Панель управления игрой</p>
+                            </div>
+                            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-lg font-semibold text-white">Баланс колоды</h2>
+                                <button onClick={autoBalance} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 px-3 py-2 rounded-lg text-sm font-medium transition">
+                                <Wand2 size={16} /> Сбалансировать
+                                </button>
+                            </div>
+                            <div className="flex items-center justify-between bg-slate-900/50 p-4 rounded-xl mb-6">
+                                <span className="text-slate-300 font-medium">Всего игроков:</span>
+                                <div className="flex items-center gap-4">
+                                <button onClick={() => setDeck(p => ({...p, total: Math.max(5, p.total - 1)}))} className="text-slate-400 hover:text-white text-xl">-</button>
+                                <span className="text-2xl font-bold w-8 text-center">{deck.total}</span>
+                                <button onClick={() => setDeck(p => ({...p, total: p.total + 1}))} className="text-slate-400 hover:text-white text-xl">+</button>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div className="space-y-2">
+                                <div className="text-xs text-slate-500 font-bold uppercase mb-3">Основа</div>
+                                {['MAFIA', 'DON', 'SHERIFF', 'CITIZEN'].map(role => (
+                                    <div key={role} className="flex justify-between items-center bg-slate-800/40 p-2 rounded-lg text-sm">
+                                    <span className={ROLES[role].color}>{ROLES[role].name}</span>
+                                    <span className="font-bold">{deck.roles[role]}</span>
+                                    </div>
+                                ))}
+                                </div>
+                                <div className="space-y-2">
+                                <div className="text-xs text-slate-500 font-bold uppercase mb-3">Доп. роли</div>
+                                {['DOCTOR', 'MANIAC', 'BEAUTY'].map(role => (
+                                    <div key={role} className="flex justify-between items-center bg-slate-800/40 p-2 rounded-lg text-sm">
+                                    <span className={ROLES[role].color}>{ROLES[role].name}</span>
+                                    <button onClick={() => setDeck(p => ({...p, roles: {...p.roles, [role]: p.roles[role] === 0 ? 1 : 0}}))} 
+                                        className={`w-10 h-5 rounded-full relative transition-colors ${deck.roles[role] > 0 ? 'bg-indigo-500' : 'bg-slate-700'}`}>
+                                        <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${deck.roles[role] > 0 ? 'translate-x-5' : ''}`} />
+                                    </button>
+                                    </div>
+                                ))}
+                                </div>
+                            </div>
+                            <button onClick={startGame} className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(225,29,72,0.4)] transition">
+                                СОЗДАТЬ ИГРУ
+                            </button>
+                            </div>
+                        </div>
+                        )}
+
+                        {/* IN-GAME TOP BAR */}
+                        {phase !== PHASES.SETUP && (
+                        <div className="flex items-center justify-between bg-slate-900/80 backdrop-blur border border-white/5 p-3 rounded-2xl mb-6 mt-2">
+                            <button onClick={undo} disabled={history.length === 0} className={`p-2 rounded-lg transition ${history.length > 0 ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700'}`}>
+                            <RotateCcw size={20} />
+                            </button>
+                            <div className="text-center">
+                            <div className="text-xs font-bold tracking-widest uppercase text-indigo-400">
+                                {phase === PHASES.DAY ? `День ${dayCount}` : phase === PHASES.NIGHT ? 'Ночь' : phase === PHASES.VOTING ? 'Суд города' : 'Утро'}
+                            </div>
+                            <div className="text-lg font-bold text-white leading-tight">
+                                {phase === PHASES.NIGHT ? (nightOrder.length > 0 ? `Шаг ${nightStep + 1} из ${nightOrder.length}` : 'Бездействие') : phase === PHASES.BRIEFING ? 'Брифинг ведущего' : 'Обсуждение'}
+                            </div>
+                            </div>
+                            <div className="w-9" />
+                        </div>
+                        )}
+
+                        {/* DAY PHASE */}
+                        {phase === PHASES.DAY && (
+                        <>
+                            <div className="mb-6 bg-slate-900/40 p-3 rounded-xl border border-white/5">
+                            <div className="flex justify-between items-center mb-2 px-1">
+                                <div className="flex gap-2">
+                                <button onClick={() => startTimer(60)} className="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-700">60с</button>
+                                <button onClick={() => startTimer(30)} className="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded hover:bg-slate-700">30с</button>
+                                </div>
+                                <div className={`font-mono text-2xl font-bold ${timeLeft <= 10 && timeLeft > 0 ? 'text-rose-500 animate-pulse' : 'text-slate-200'}`}>
+                                {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                                </div>
+                                <div className="flex gap-2">
+                                <button onClick={() => setIsTimerRunning(!isTimerRunning)} className="text-slate-400 hover:text-white p-1">
+                                    {isTimerRunning ? <Pause size={20} /> : <Play size={20} />}
+                                </button>
+                                <button onClick={() => { setIsTimerRunning(false); setTimeLeft(0); }} className="text-slate-400 hover:text-rose-400 p-1">
+                                    <Square size={20} />
+                                </button>
+                                </div>
+                            </div>
+                            <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                <div className={`h-full transition-all duration-1000 linear ${timeLeft <= 10 ? 'bg-rose-500' : 'bg-indigo-500'}`} style={{ width: `${(timeLeft / maxTimeRef.current) * 100}%` }} />
+                            </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pb-24">
+                            {players.map(p => (
+                                <div key={p.id} className={`p-3 rounded-xl border backdrop-blur-md transition-all ${!p.isAlive ? 'opacity-40 grayscale border-slate-800 bg-slate-900/50' : nominations.includes(p.id) ? 'border-rose-500 bg-rose-500/10' : 'border-white/10 bg-white/5'}`}>
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-xs font-bold text-slate-500">#{p.id}</span>
+                                    {p.isAlive && (
+                                    <button onClick={() => setPlayers(players.map(pl => pl.id === p.id ? { ...pl, isExposed: !pl.isExposed } : pl))} className="text-slate-500 hover:text-slate-300">
+                                        <Eye size={16} />
+                                    </button>
+                                    )}
+                                </div>
+                                <input value={p.name} onChange={(e) => handleNameChange(p.id, e.target.value)} onFocus={(e) => e.target.select()} className="w-full bg-transparent text-white font-bold text-sm outline-none mb-1 text-center" disabled={!p.isAlive} />
+                                <div className="h-6 flex items-center justify-center mb-3">
+                                    {p.isExposed && p.isAlive && <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${ROLES[p.role].bg} ${ROLES[p.role].color}`}>{ROLES[p.role].name}</span>}
+                                    {!p.isAlive && <Skull size={18} className="text-slate-500" />}
+                                </div>
+                                {p.isAlive && (
+                                    <button onClick={() => toggleNomination(p.id)} className={`w-full py-2 rounded-lg text-xs font-bold transition ${nominations.includes(p.id) ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                                    {nominations.includes(p.id) ? 'СНЯТЬ' : 'ВЫСТАВИТЬ'}
+                                    </button>
+                                )}
+                                </div>
+                            ))}
+                            </div>
+                            <div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-950/90 backdrop-blur-xl border-t border-white/10">
+                            <button onClick={endDay} className="w-full max-w-md mx-auto block bg-slate-100 hover:bg-white text-slate-900 font-bold py-3.5 rounded-xl transition">
+                                {nominations.length > 0 ? 'ПЕРЕЙТИ К ГОЛОСОВАНИЮ' : 'НАСТУПАЕТ НОЧЬ'}
+                            </button>
+                            </div>
+                        </>
+                        )}
+
+                        {/* VOTING PHASE */}
+                        {phase === PHASES.VOTING && (
+                        <>
+                            <div className="space-y-3 mb-24 max-w-md mx-auto">
+                            {nominations.map(id => {
+                                const p = players.find(x => x.id === id);
+                                return (
+                                <div key={id} className="flex items-center justify-between bg-white/5 border border-white/10 p-4 rounded-xl">
+                                    <span className="text-white font-bold text-lg">{p.name}</span>
+                                    <div className="flex items-center gap-4">
+                                    <button onClick={() => addVote(id, -1)} className="w-10 h-10 rounded-full bg-slate-800 text-slate-300">-</button>
+                                    <span className="text-2xl font-bold w-6 text-center text-rose-500">{votes[id]}</span>
+                                    <button onClick={() => addVote(id, 1)} className="w-10 h-10 rounded-full bg-slate-800 text-slate-300">+</button>
+                                    </div>
+                                </div>
+                                );
+                            })}
+                            </div>
+                            <div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-950/90 backdrop-blur-xl border-t border-white/10">
+                            <button onClick={calculateVoting} className="w-full max-w-md mx-auto block bg-rose-600 hover:bg-rose-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(225,29,72,0.3)] transition">
+                                ПОДВЕСТИ ИТОГИ ГОЛОСОВАНИЯ
+                            </button>
+                            </div>
+                        </>
+                        )}
+
+                        {/* NIGHT PHASE */}
+                        {phase === PHASES.NIGHT && nightOrder.length > 0 && (
+                        <div className="max-w-md mx-auto">
+                            <div className="text-center mb-8 mt-6">
+                            <Moon size={48} className="mx-auto text-indigo-400 mb-4 opacity-50" />
+                            <h2 className="text-2xl font-bold text-white mb-2">{nightOrder[nightStep].action}</h2>
+                            <p className="text-sm text-slate-400">Выберите цель или пропустите ход</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 pb-24">
+                            {players.filter(p => p.isAlive).map(p => (
+                                <button key={p.id} onClick={() => handleNightAction(p.id)} className="bg-slate-800/50 hover:bg-indigo-600/30 border border-white/5 p-4 rounded-xl text-left transition">
+                                <div className="text-xs text-slate-500 mb-1">#{p.id}</div>
+                                <div className="text-white font-bold text-sm truncate">{p.name}</div>
+                                </button>
+                            ))}
+                            </div>
+                            <div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-950/90 backdrop-blur-xl border-t border-white/10">
+                            <button onClick={() => handleNightAction(null)} className="w-full max-w-md mx-auto block bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 rounded-xl transition">
+                                ПРОПУСТИТЬ ХОД
+                            </button>
+                            </div>
+                        </div>
+                        )}
+
+                        {/* EMPTY NIGHT BACKUP */}
+                        {phase === PHASES.NIGHT && nightOrder.length === 0 && (
+                        <div className="flex flex-col items-center justify-center h-[50vh]">
+                            <AlertCircle size={48} className="text-slate-500 mb-4" />
+                            <h2 className="text-xl text-slate-300 mb-6">Нет активных ролей</h2>
+                            <button onClick={() => finishNight({})} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold">УТРО</button>
+                        </div>
+                        )}
+
+                        {/* BRIEFING PHASE */}
+                        {phase === PHASES.BRIEFING && (
+                        <div className="max-w-md mx-auto flex flex-col h-full">
+                            <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 mb-6">
+                            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><Sun size={20} className="text-amber-500"/> Сообщить городу:</h3>
+                            <p className="text-slate-300 text-sm leading-relaxed mb-5 italic border-l-2 border-amber-500 pl-4">
+                                «Город просыпается. {briefingData?.killedNames?.length > 0 ? `Этой ночью нас покинул(и): ${briefingData.killedNames.join(', ')}.` : 'Этой ночью никто не умер.'}»
+                            </p>
+                            {briefingData?.reports?.length > 0 && (
+                                <>
+                                <div className="w-full h-px bg-white/10 my-5" />
+                                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Секретно (только для вас):</h3>
+                                <ul className="space-y-3">
+                                    {briefingData.reports.map((report, idx) => (
+                                    <li key={idx} className="text-sm text-indigo-300 flex items-start gap-2">
+                                        <Shield size={16} className="mt-0.5 shrink-0" /> {report}
+                                    </li>
+                                    ))}
+                                </ul>
+                                </>
+                            )}
+                            </div>
+                            <button onClick={() => { saveToHistory(); setDayCount(prev => prev + 1); setPhase(PHASES.DAY); }} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition">
+                            НАЧАТЬ ДЕНЬ {dayCount + 1}
+                            </button>
+                        </div>
+                        )}
+
+                    </div>
+                </div>
+            );
+        }
+
+        // --- ЗАПУСК REACT ---
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MafiaOS />);
+    </script>
+</body>
+</html>
