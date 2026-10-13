@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mafia Omni OS — Masterpiece Edition</title>
+    
+    <!-- React & Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'scale-up': 'scaleUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'float': 'float 5s ease-in-out infinite',
+                        'heartbeat': 'heartbeat 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 24s linear infinite',
+                        'deal-cards': 'dealCards 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'eq-1': 'eq 0.8s ease-in-out infinite alternate',
+                        'eq-2': 'eq 0.5s ease-in-out infinite alternate',
+                        'eq-3': 'eq 1.1s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        scaleUp: { '0%': { opacity: '0', transform: 'scale(0.92)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(30px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+                        heartbeat: { '0%, 100%': { transform: 'scale(1)' }, '25%': { transform: 'scale(1.12)' }, '50%': { transform: 'scale(1)' }, '75%': { transform: 'scale(1.08)' } },
+                        dealCards: { '0%': { opacity: '0', transform: 'translateY(80px) scale(0.6) rotate(8deg)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1) rotate(0deg)' } },
+                        eq: { '0%': { height: '20%' }, '100%': { height: '100%' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap');
+        
+        body { 
+            background-color: #02040a; 
+            color: #f8fafc; 
+            overflow-x: hidden; 
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Outfit', sans-serif;
+        }
+        
+        .font-tech { font-family: 'Space Grotesk', sans-serif; }
+        button { touch-action: manipulation; outline: none; user-select: none; }
+        
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.6); }
+
+        .omni-glass {
+            background: rgba(11, 15, 29, 0.72);
+            backdrop-filter: blur(36px) saturate(140%);
+            -webkit-backdrop-filter: blur(36px) saturate(140%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .omni-card {
+            background: linear-gradient(155deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @media (hover: hover) {
+            .omni-card-hover:hover {
+                border-color: rgba(99, 102, 241, 0.4);
+                background: linear-gradient(155deg, rgba(99, 102, 241, 0.12) 0%, rgba(255, 255, 255, 0.02) 100%);
+                transform: translateY(-3px);
+                box-shadow: 0 15px 35px -10px rgba(99, 102, 241, 0.25);
+            }
+        }
+
+        .bg-grid {
+            background-size: 56px 56px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            mask-image: radial-gradient(circle at center, black 35%, transparent 85%);
+            -webkit-mask-image: radial-gradient(circle at center, black 35%, transparent 85%);
+        }
+
+        .player-card-container { perspective: 1200px; }
+        
+        .player-card-flipper {
+            transition: transform 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .player-card-flipper.flipped { transform: rotateY(180deg); }
+
+        .card-front, .card-back {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            position: absolute;
+            inset: 0;
+            border-radius: 1.75rem;
+        }
+
+        .card-back { transform: rotateY(180deg); }
+        .vote-bar-fill { transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+    </style>
+</head>
+<body class="antialiased selection:bg-indigo-500/30">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // ============================================================================
+        // 🎵 БЛОК НАСТРОЙКИ МУЗЫКИ (ВСТАВЬТЕ СЮДА ПУТИ К ВАШИМ АУДИОФАЙЛАМ)
+        // Также вы можете выбрать файлы прямо внутри приложения через кнопку "Аудиотека"!
+        // ============================================================================
+        const AUDIO_FILES_CONFIG = {
+            // 1. Фоновая музыка (играет на протяжении всей игры, зациклена)
+            BACKGROUND: {
+                title: 'Фоновая атмосфера (Постоянная)',
+                src: 'music/background.mp3', // <-- Замените на путь к вашему файлу фоновой музыки
+            },
+            // 2. Музыка выходов ролей ночью (включается автоматически на ходе роли)
+            BEAUTY: {
+                title: 'Тема Красотки',
+                src: 'music/beauty.mp3',     // <-- Замените на путь к музыке Красотки
+            },
+            MAFIA_GROUP: {
+                title: 'Тема Мафии',
+                src: 'music/mafia.mp3',      // <-- Замените на путь к музыке Мафии
+            },
+            MANIAC: {
+                title: 'Тема Маньяка',
+                src: 'music/maniac.mp3',     // <-- Замените на путь к музыке Маньяка
+            },
+            DOCTOR: {
+                title: 'Тема Доктора',
+                src: 'music/doctor.mp3',     // <-- Замените на путь к музыке Доктора
+            },
+            SHERIFF: {
+                title: 'Тема Шерифа',
+                src: 'music/sheriff.mp3',    // <-- Замените на путь к музыке Шерифа
+            },
+            DON: {
+                title: 'Тема Дона',
+                src: 'music/don.mp3',        // <-- Замените на путь к музыке Дона
+            }
+        };
+
+        // Синтезатор интерфейсных звуков (SFX)
+        const playOmniSound = (type) => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime;
+                
+                const createOsc = (freq, vStart, vEnd, dur, wave='sine') => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = wave;
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(vStart, now);
+                    gain.gain.exponentialRampToValueAtTime(vEnd, now + dur);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + dur);
+                };
+
+                switch (type) {
+                    case 'hologram':
+                        createOsc(880, 0.06, 0.001, 0.14, 'sine');
+                        createOsc(1760, 0.03, 0.001, 0.18, 'sine');
+                        break;
+                    case 'select':
+                    case 'click':
+                        createOsc(460, 0.04, 0.001, 0.08, 'triangle');
+                        break;
+                    case 'flip':
+                        createOsc(320, 0.07, 0.001, 0.25, 'triangle');
+                        createOsc(640, 0.04, 0.001, 0.3, 'sine');
+                        break;
+                    case 'danger':
+                    case 'no':
+                        createOsc(110, 0.12, 0.001, 0.35, 'sawtooth');
+                        createOsc(55, 0.12, 0.001, 0.45, 'square');
+                        break;
+                    case 'success':
+                    case 'yes':
+                        createOsc(587.33, 0.08, 0.001, 0.25, 'sine');
+                        setTimeout(() => createOsc(880, 0.09, 0.001, 0.35, 'sine'), 90);
+                        break;
+                    case 'night_start':
+                        createOsc(160, 0.08, 0.001, 2.2, 'sine');
+                        createOsc(80, 0.08, 0.001, 2.8, 'triangle');
+                        break;
+                    case 'distribute':
+                        for(let i = 0; i < 7; i++) {
+                            setTimeout(() => createOsc(650 + (i * 110), 0.03, 0.001, 0.09, 'sine'), i * 100);
+                        }
+                        break;
+                    case 'victory':
+                        [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+                            setTimeout(() => createOsc(f, 0.09, 0.001, 0.55, 'sine'), i * 160);
+                        });
+                        break;
+                }
+            } catch(e) {}
+        };
+
+        const haptic = (intensity = 'light') => {
+            if (!navigator.vibrate) return;
+            try {
+                if (intensity === 'light') navigator.vibrate(10);
+                if (intensity === 'medium') navigator.vibrate(25);
+                if (intensity === 'heavy') navigator.vibrate([45, 35, 45]);
+                if (intensity === 'pulse') navigator.vibrate([15, 40, 15, 40, 20]);
+                if (intensity === 'distribute') navigator.vibrate([15, 40, 15, 40, 15, 40]);
+            } catch(e) {}
+        };
+
+        const iconsPaths = {
+            Shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+            Moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+            Sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+            RotateCcw: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+            Play: '<polygon points="5 3 19 12 5 21 5 3"/>',
+            Pause: '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
+            Square: '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>',
+            Skull: '<circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.56-1.25 2 2 0 0 0-.44-2.25l-1.2-1.25a7.92 7.92 0 0 0 1.1-6.17C16.1 5.92 13 3 9 3c-4.4 0-7.3 2.92-8.02 6.08a7.92 7.92 0 0 0 1.1 6.17l-1.2 1.25a2 2 0 0 0-.44 2.25A2 2 0 0 0 2 20h2"/>',
+            Eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+            EyeOff: '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/>',
+            Wand2: '<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/>',
+            Trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+            Terminal: '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>',
+            Mic: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>',
+            X: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+            Crosshair: '<circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/>',
+            Volume2: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
+            VolumeX: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/>',
+            Check: '<polyline points="20 6 9 17 4 12"/>',
+            Clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+            Flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+            Database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+            ThumbsUp: '<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>',
+            ThumbsDown: '<path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/>',
+            Lock: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+            UserCheck: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/>',
+            Music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+            Headphones: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
+            Upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+            Sparkles: '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>',
+            SkipForward: '<polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>',
+            Shuffle: '<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>',
+            AlertCircle: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+        };
+
+        const Icon = ({ name, size = 20, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: iconsPaths[name] || iconsPaths.Sparkles }} />
+        );
+
+        const ROLES = {
+            CITIZEN: { id: 'CITIZEN', name: 'Мирный', color: 'text-slate-200', bg: 'bg-slate-500/20', border: 'border-slate-400/40', glow: 'shadow-slate-400/20', accent: 'from-slate-500/20' },
+            MAFIA:   { id: 'MAFIA',   name: 'Мафия',  color: 'text-rose-400',  bg: 'bg-rose-900/40',  border: 'border-rose-500/50',  glow: 'shadow-rose-500/40',  accent: 'from-rose-600/30' },
+            DON:     { id: 'DON',     name: 'Дон',    color: 'text-red-500',   bg: 'bg-red-950/60',   border: 'border-red-600/60',   glow: 'shadow-red-600/50',   accent: 'from-red-700/30' },
+            SHERIFF: { id: 'SHERIFF', name: 'Шериф',  color: 'text-amber-400', bg: 'bg-amber-900/40', border: 'border-amber-500/50', glow: 'shadow-amber-500/40', accent: 'from-amber-500/30' },
+            DOCTOR:  { id: 'DOCTOR',  name: 'Доктор', color: 'text-emerald-400',bg: 'bg-emerald-900/40',border: 'border-emerald-500/50',glow: 'shadow-emerald-500/40',accent: 'from-emerald-500/30' },
+            MANIAC:  { id: 'MANIAC',  name: 'Маньяк', color: 'text-orange-400',bg: 'bg-orange-900/40',border: 'border-orange-500/50',glow: 'shadow-orange-500/40',accent: 'from-orange-500/30' },
+            BEAUTY:  { id: 'BEAUTY',  name: 'Красотка',color: 'text-fuchsia-400',bg: 'bg-fuchsia-900/40',border: 'border-fuchsia-500/50',glow: 'shadow-fuchsia-500/40',accent: 'from-fuchsia-500/30' },
+        };
+
+        const PHASES = {
+            SETUP: 'SETUP',
+            DISTRIBUTION: 'DISTRIBUTION',
+            NAME_SETUP: 'NAME_SETUP',
+            DAY: 'DAY',
+            VOTING: 'VOTING',
+            NIGHT: 'NIGHT',
+            BRIEFING: 'BRIEFING',
+            GAME_OVER: 'GAME_OVER'
+        };
+
+        function MafiaOS() {
+            const [phase, setPhase] = useState(PHASES.SETUP);
+            const [dayCount, setDayCount] = useState(1);
+            const [players, setPlayers] = useState([]);
+            
+            const [deck, setDeck] = useState({ 
+                MAFIA: 2, CITIZEN: 6, 
+                DON: 1, SHERIFF: 1, DOCTOR: 0, MANIAC: 0, BEAUTY: 0 
+            });
+
+            const totalPlayers = Object.values(deck).reduce((a, b) => a + b, 0);
+
+            const [nominations, setNominations] = useState([]);
+            const [votes, setVotes] = useState({});
+            const [nightActions, setNightActions] = useState({});
+            const [nightStep, setNightStep] = useState(0);
+            const [briefingData, setBriefingData] = useState(null);
+            const [winner, setWinner] = useState(null);
+            const [speakerId, setSpeakerId] = useState(null);
+            const [hideRolesInSetup, setHideRolesInSetup] = useState(false);
+            
+            // Временная анимация выбора ночью (YES, NO, BLOCKED, SELECTED)
+            const [nightAnim, setNightAnim] = useState(null); 
+            
+            // ================= АУДИО СИСТЕМА (ФОН + РОЛИ + SFX) =================
+            const [tracks, setTracks] = useState(AUDIO_FILES_CONFIG);
+            const [bgMusicEnabled, setBgMusicEnabled] = useState(true);
+            const [roleMusicEnabled, setRoleMusicEnabled] = useState(true);
+            const [sfxEnabled, setSfxEnabled] = useState(true);
+            
+            const [bgVolume, setBgVolume] = useState(0.35);
+            const [roleVolume, setRoleVolume] = useState(0.85);
+            const [showAudioStudio, setShowAudioStudio] = useState(false);
+            const [activeRoleTrackKey, setActiveRoleTrackKey] = useState(null);
+            const [previewTrackKey, setPreviewTrackKey] = useState(null);
+
+            const bgAudioRef = useRef(null);
+            const roleAudioRef = useRef(null);
+
+            const [showLog, setShowLog] = useState(false);
+            const [gameLog, setGameLog] = useState([]);
+
+            const [timeLeft, setTimeLeft] = useState(0);
+            const [isTimerRunning, setIsTimerRunning] = useState(false);
+            const timerRef = useRef(null);
+            const maxTimeRef = useRef(60);
+            
+            const [history, setHistory] = useState([]);
+
+            const triggerSound = (type) => { if (sfxEnabled) playOmniSound(type); };
+
+            // Инициализация аудио-объектов
+            useEffect(() => {
+                bgAudioRef.current = new Audio();
+                bgAudioRef.current.loop = true;
+                roleAudioRef.current = new Audio();
+                roleAudioRef.current.loop = true;
+
+                return () => {
+                    bgAudioRef.current?.pause();
+                    roleAudioRef.current?.pause();
+                };
+            }, []);
+
+            // Управление Фоновой Музыкой + Auto-Ducking (приглушение фона, когда играет музыка роли)
+            useEffect(() => {
+                const bgAudio = bgAudioRef.current;
+                if (!bgAudio) return;
+
+                const currentSrc = tracks.BACKGROUND?.src;
+                if (bgAudio.getAttribute('data-src') !== currentSrc && currentSrc) {
+                    bgAudio.src = currentSrc;
+                    bgAudio.setAttribute('data-src', currentSrc);
+                }
+
+                // Если ночью играет музыка роли, приглушаем фоновую музыку в 3 раза
+                const isRolePlayingNow = (phase === PHASES.NIGHT && roleMusicEnabled) || previewTrackKey;
+                bgAudio.volume = isRolePlayingNow ? Math.max(0.05, bgVolume * 0.25) : bgVolume;
+
+                if (bgMusicEnabled && currentSrc) {
+                    bgAudio.play().catch(() => {});
+                } else {
+                    bgAudio.pause();
+                }
+            }, [bgMusicEnabled, bgVolume, tracks.BACKGROUND, phase, roleMusicEnabled, previewTrackKey]);
+
+            // Управление Музыкой Ролей ночью
+            const getActiveNightRoles = () => {
+                const active = [];
+                const hasAlive = (roleId) => players.some(p => p.role === roleId && p.isAlive);
+                
+                if (hasAlive('BEAUTY')) active.push({ role: 'BEAUTY', action: 'Просыпается Красотка', desc: 'Блокирует способность игрока (алиби не дает)', color: 'fuchsia' });
+                if (hasAlive('MAFIA') || hasAlive('DON')) active.push({ role: 'MAFIA_GROUP', action: 'Охота Мафии', desc: 'Единый выстрел клана', color: 'rose' });
+                if (hasAlive('MANIAC')) active.push({ role: 'MANIAC', action: 'Просыпается Маньяк', desc: 'Одиночный выстрел в ночи', color: 'orange' });
+                if (hasAlive('DOCTOR')) active.push({ role: 'DOCTOR', action: 'Дежурство Доктора', desc: 'Спасение от смертельного ранения', color: 'emerald' });
+                if (hasAlive('SHERIFF')) active.push({ role: 'SHERIFF', action: 'Проверка Шерифа', desc: 'Поиск представителей мафии', color: 'amber' });
+                if (hasAlive('DON')) active.push({ role: 'DON', action: 'Проверка Дона', desc: 'Поиск Шерифа города', color: 'red' });
+                return active;
+            };
+
+            const nightOrder = getActiveNightRoles();
+
+            useEffect(() => {
+                const roleAudio = roleAudioRef.current;
+                if (!roleAudio) return;
+
+                roleAudio.volume = roleVolume;
+
+                // Если включено прослушивание в Аудио-Студии
+                if (previewTrackKey && tracks[previewTrackKey]?.src) {
+                    if (roleAudio.getAttribute('data-src') !== tracks[previewTrackKey].src) {
+                        roleAudio.src = tracks[previewTrackKey].src;
+                        roleAudio.setAttribute('data-src', tracks[previewTrackKey].src);
+                    }
+                    roleAudio.play().catch(() => {});
+                    setActiveRoleTrackKey(previewTrackKey);
+                    return;
+                }
+
+                // Если идет НОЧЬ и музыка ролей ВКЛЮЧЕНА
+                if (phase === PHASES.NIGHT && roleMusicEnabled && nightOrder.length > 0 && nightOrder[nightStep]) {
+                    const roleKey = nightOrder[nightStep].role;
+                    const trackSrc = tracks[roleKey]?.src;
+                    setActiveRoleTrackKey(roleKey);
+
+                    if (trackSrc) {
+                        if (roleAudio.getAttribute('data-src') !== trackSrc) {
+                            roleAudio.src = trackSrc;
+                            roleAudio.setAttribute('data-src', trackSrc);
+                        }
+                        roleAudio.currentTime = 0;
+                        roleAudio.play().catch(() => {});
+                    } else {
+                        roleAudio.pause();
+                    }
+                } else {
+                    roleAudio.pause();
+                    setActiveRoleTrackKey(null);
+                }
+            }, [phase, nightStep, roleMusicEnabled, roleVolume, tracks, previewTrackKey, players]);
+
+            // Загрузка пользовательского аудиофайла прямо в браузере
+            const handleFileUpload = (trackKey, event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                const objectUrl = URL.createObjectURL(file);
+                setTracks(prev => ({
+                    ...prev,
+                    [trackKey]: {
+                        ...prev[trackKey],
+                        src: objectUrl,
+                        fileName: file.name
+                    }
+                }));
+                haptic('medium');
+                triggerSound('success');
+            };
+
+            const logEvent = (text, type = 'info') => {
+                const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+                setGameLog(prev => [{ id: Date.now() + Math.random(), day: dayCount, text, type, time }, ...prev]);
+            };
+
+            const saveToHistory = () => {
+                const currentState = JSON.stringify({ phase, dayCount, players, nominations, votes, nightActions, nightStep, briefingData, winner, gameLog });
+                setHistory(prev => [...prev.slice(-40), currentState]);
+            };
+
+            const undo = () => {
+                if (history.length === 0) return;
+                haptic('medium');
+                triggerSound('select');
+                const s = JSON.parse(history[history.length - 1]);
+                setPhase(s.phase); setDayCount(s.dayCount); setPlayers(s.players);
+                setNominations(s.nominations); setVotes(s.votes); setNightActions(s.nightActions);
+                setNightStep(s.nightStep); setBriefingData(s.briefingData); setWinner(s.winner); setGameLog(s.gameLog);
+                setHistory(prev => prev.slice(0, -1));
+            };
+
+            const stats = useMemo(() => {
+                const alive = players.filter(p => p.isAlive);
+                const mafia = alive.filter(p => p.role === 'MAFIA' || p.role === 'DON').length;
+                const city = alive.length - mafia;
+                return { alive: alive.length, mafia, city, total: players.length };
+            }, [players]);
+
+            const checkWin = (currentPlayers) => {
+                const alive = currentPlayers.filter(p => p.isAlive);
+                if (alive.length === 0) return 'Ничья (Все мертвы)';
+                const mafia = alive.filter(p => p.role === 'MAFIA' || p.role === 'DON').length;
+                const city = alive.length - mafia;
+                if (mafia === 0) return 'Победа Мирных';
+                if (mafia >= city) return 'Победа Мафии';
+                return null;
+            };
+
+            const autoBalance = () => {
+                haptic('medium');
+                triggerSound('hologram');
+                const total = Math.max(5, totalPlayers);
+                const mafiaCount = Math.floor(total / 3);
+                
+                const don = deck.DON > 0 ? 1 : 0;
+                const sheriff = deck.SHERIFF > 0 ? 1 : 0;
+                const doctor = deck.DOCTOR > 0 ? 1 : 0;
+                const maniac = deck.MANIAC > 0 ? 1 : 0;
+                const beauty = deck.BEAUTY > 0 ? 1 : 0;
+                
+                const mafia = Math.max(1, mafiaCount - don);
+                const citizens = Math.max(1, total - (mafia + don + sheriff + doctor + maniac + beauty));
+                
+                setDeck({ MAFIA: mafia, CITIZEN: citizens, DON: don, SHERIFF: sheriff, DOCTOR: doctor, MANIAC: maniac, BEAUTY: beauty });
+            };
+
+            const buildShuffledPlayers = (existingNames = []) => {
+                const rolePool = [];
+                Object.entries(deck).forEach(([role, count]) => {
+                    for (let i = 0; i < count; i++) rolePool.push(role);
+                });
+                
+                for (let i = rolePool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [rolePool[i], rolePool[j]] = [rolePool[j], rolePool[i]];
+                }
+
+                return rolePool.map((role, idx) => ({
+                    id: idx + 1,
+                    name: existingNames[idx] || `Игрок ${idx + 1}`,
+                    role,
+                    isAlive: true,
+                    isExposed: false,
+                    fouls: 0,
+                    knownToSheriff: false,
+                    knownToDon: false
+                }));
+            };
+
+            const startGame = () => {
+                if (totalPlayers < 3) return;
+                haptic('distribute');
+                triggerSound('distribute');
+                
+                // Разблокируем аудиоконтекст браузера при первом клике
+                if (bgMusicEnabled && bgAudioRef.current && tracks.BACKGROUND?.src) {
+                    bgAudioRef.current.play().catch(() => {});
+                }
+
+                setPlayers(buildShuffledPlayers());
+                setPhase(PHASES.DISTRIBUTION);
+                setHistory([]);
+                setGameLog([]);
+                logEvent('Генерация ролей завершена. Матрица загружена.', 'system');
+
+                setTimeout(() => {
+                    setPhase(PHASES.NAME_SETUP);
+                    haptic('medium');
+                }, 2600);
+            };
+
+            const reshuffleRolesInSetup = () => {
+                haptic('distribute');
+                triggerSound('distribute');
+                const currentNames = players.map(p => p.name);
+                setPlayers(buildShuffledPlayers(currentNames));
+            };
+            
+            const beginDayOne = () => {
+                haptic('heavy');
+                setPhase(PHASES.DAY);
+                setDayCount(1);
+                setWinner(null);
+                triggerSound('night_start');
+                logEvent('День 1. Город просыпается.', 'info');
+            };
+
+            const handleNameChange = (id, newName) => {
+                setPlayers(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p));
+            };
+
+            const addFoul = (id) => {
+                haptic('light');
+                triggerSound('select');
+                setPlayers(prev => prev.map(p => {
+                    if (p.id !== id) return p;
+                    const nextFouls = (p.fouls + 1) % 5;
+                    if (nextFouls === 4) {
+                        logEvent(`${p.name} получает 4-й фол (Удаление)!`, 'danger');
+                    } else if (nextFouls > 0) {
+                        logEvent(`${p.name} получает фол (${nextFouls}/4)`, 'warning');
+                    }
+                    return { ...p, fouls: nextFouls };
+                }));
+            };
+
+            const cyclePlayerStatus = (id) => {
+                saveToHistory();
+                haptic('heavy');
+                triggerSound('danger');
+                setPlayers(prev => prev.map(p => {
+                    if (p.id !== id) return p;
+                    const nextAlive = !p.isAlive;
+                    logEvent(`${p.name} (#${p.id}) статус изменен: ${nextAlive ? 'В игре' : 'Покинул стол'}`, nextAlive ? 'success' : 'danger');
+                    return { ...p, isAlive: nextAlive, isExposed: !nextAlive ? true : p.isExposed };
+                }));
+            };
+
+            useEffect(() => {
+                if (isTimerRunning && timeLeft > 0) {
+                    timerRef.current = setTimeout(() => {
+                        setTimeLeft(prev => {
+                            if (prev <= 10 && prev > 1) {
+                                triggerSound('select');
+                                haptic('light');
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                } else if (timeLeft === 0 && isTimerRunning) {
+                    setIsTimerRunning(false);
+                    haptic('heavy');
+                    triggerSound('danger');
+                }
+                return () => clearTimeout(timerRef.current);
+            }, [timeLeft, isTimerRunning]);
+
+            const startTimer = (secs, spkId = null) => {
+                haptic('light');
+                triggerSound('hologram');
+                maxTimeRef.current = secs;
+                setTimeLeft(secs);
+                setIsTimerRunning(true);
+                if (spkId !== null) setSpeakerId(spkId);
+            };
+
+            const toggleSpeaker = (id) => {
+                haptic('light');
+                triggerSound('select');
+                if (speakerId === id) {
+                    setSpeakerId(null);
+                    setIsTimerRunning(false);
+                } else {
+                    startTimer(60, id);
+                }
+            };
+
+            const nextAliveSpeaker = () => {
+                const alivePlayers = players.filter(p => p.isAlive);
+                if (alivePlayers.length === 0) return;
+                if (!speakerId) {
+                    startTimer(60, alivePlayers[0].id);
+                    return;
+                }
+                const idx = alivePlayers.findIndex(p => p.id === speakerId);
+                const nextPlayer = alivePlayers[(idx + 1) % alivePlayers.length];
+                startTimer(60, nextPlayer.id);
+            };
+
+            const toggleNomination = (playerId) => {
+                haptic('medium');
+                triggerSound('select');
+                setNominations(prev => {
+                    if (prev.includes(playerId)) return prev.filter(id => id !== playerId);
+                    const p = players.find(x => x.id === playerId);
+                    logEvent(`Выставлена кандидатура: #${p?.id} ${p?.name}`, 'warning');
+                    return [...prev, playerId];
+                });
+            };
+
+            const endDay = () => {
+                saveToHistory();
+                haptic('medium');
+                triggerSound('select');
+                setSpeakerId(null);
+                setIsTimerRunning(false);
+                if (nominations.length > 0) {
+                    setPhase(PHASES.VOTING);
+                    const initialVotes = {};
+                    nominations.forEach(id => initialVotes[id] = 0);
+                    setVotes(initialVotes);
+                    logEvent(`Начало голосования. Кандидатов: ${nominations.length}`, 'system');
+                } else {
+                    logEvent('Кандидатур нет. Город уходит в ночь.', 'night');
+                    startNight();
+                }
+            };
+
+            const addVote = (playerId, delta) => {
+                haptic('light');
+                triggerSound('select');
+                const aliveCount = stats.alive;
+                const currentTotal = Object.values(votes).reduce((a, b) => a + b, 0);
+                
+                setVotes(prev => {
+                    const newVal = Math.max(0, (prev[playerId] || 0) + delta);
+                    if (delta > 0 && currentTotal >= aliveCount) return prev; 
+                    return { ...prev, [playerId]: newVal };
+                });
+            };
+
+            const calculateVoting = () => {
+                saveToHistory();
+                haptic('pulse');
+                triggerSound('danger');
+                const maxVotes = Math.max(...Object.values(votes));
+                const leaders = Object.keys(votes).filter(id => votes[id] === maxVotes).map(Number);
+
+                if (leaders.length === 1 && maxVotes > 0) {
+                    const victim = players.find(p => p.id === leaders[0]);
+                    const newPlayers = players.map(p => p.id === leaders[0] ? { ...p, isAlive: false, isExposed: true } : p);
+                    setPlayers(newPlayers);
+                    setNominations([]);
+                    logEvent(`По итогам голосования город покидает: ${victim.name} (${ROLES[victim.role].name}) [${maxVotes} гол.]`, 'danger');
+                    
+                    const win = checkWin(newPlayers);
+                    if (win) {
+                        setWinner(win);
+                        triggerSound('victory');
+                        logEvent(win, 'success');
+                        setPhase(PHASES.GAME_OVER);
+                    } else {
+                        startNight();
+                    }
+                } else if (maxVotes === 0) {
+                    setNominations([]);
+                    logEvent('Голоса не распределены. Город засыпает.', 'info');
+                    startNight();
+                } else {
+                    setNominations(leaders);
+                    const newVotes = {};
+                    leaders.forEach(id => newVotes[id] = 0);
+                    setVotes(newVotes);
+                    logEvent(`Автокатастрофа (равенство голосов по ${maxVotes}). Перестрелка!`, 'warning');
+                }
+            };
+
+            const startNight = () => {
+                setPhase(PHASES.NIGHT);
+                setNightActions({});
+                setNightStep(0);
+                setNominations([]);
+                triggerSound('night_start');
+                logEvent(`Наступает Ночь ${dayCount}`, 'night');
+            };
+
+            // ================= НОЧНОЙ ВЫБОР И ПРОВЕРКИ =================
+            const handleNightAction = (targetId) => {
+                if (nightAnim) return; // Защита от двойного нажатия во время анимации
+                
+                haptic('medium');
+                
+                const currentRoleKey = nightOrder[nightStep].role;
+                const newActions = { ...nightActions, [currentRoleKey]: targetId };
+                
+                // Пропуск хода
+                if (!targetId) {
+                    triggerSound('select');
+                    proceedNextNightStep(newActions);
+                    return;
+                }
+
+                const actor = players.find(p => p.role === currentRoleKey && p.isAlive);
+                const targetPlayer = players.find(p => p.id === targetId);
+
+                // Если действует Шериф или Дон -> показываем результат проверки или БЛОК
+                if (currentRoleKey === 'SHERIFF' || currentRoleKey === 'DON') {
+                    const isBlocked = newActions['BEAUTY'] === actor?.id;
+                    
+                    let resultStatus = '';
+                    if (isBlocked) {
+                        resultStatus = 'BLOCKED';
+                        triggerSound('danger');
+                        haptic('heavy');
+                    } else {
+                        if (currentRoleKey === 'SHERIFF') {
+                            resultStatus = (targetPlayer.role === 'MAFIA' || targetPlayer.role === 'DON') ? 'YES' : 'NO';
+                        } else {
+                            resultStatus = (targetPlayer.role === 'SHERIFF') ? 'YES' : 'NO';
+                        }
+                        triggerSound(resultStatus === 'YES' ? 'yes' : 'no');
+                    }
+                    
+                    setNightAnim({ targetId, status: resultStatus });
+                    
+                    setTimeout(() => {
+                        setNightAnim(null);
+                        proceedNextNightStep(newActions);
+                    }, 2200);
+                    
+                } else {
+                    // Для Красотки, Мафии, Маньяка, Доктора -> быстрая вспышка подтверждения и сброс кнопки
+                    triggerSound('select');
+                    setNightAnim({ targetId, status: 'SELECTED' });
+                    
+                    setTimeout(() => {
+                        setNightAnim(null);
+                        proceedNextNightStep(newActions);
+                    }, 650);
+                }
+            };
+
+            const proceedNextNightStep = (newActions) => {
+                setNightActions(newActions);
+                if (nightStep + 1 < nightOrder.length) setNightStep(prev => prev + 1);
+                else finishNight(newActions);
+            };
+
+            // ================= ПОДСЧЕТ ИТОГОВ НОЧИ (С НОВОЙ ЛОГИКОЙ КРАСОТКИ) =================
+            const finishNight = (actions) => {
+                saveToHistory();
+                haptic('heavy');
+                let killed = [];
+                let saved = [];
+                let reports = [];
+                let blockedRoles = [];
+
+                const beautyTargetId = actions['BEAUTY'];
+                const beautyPlayer = players.find(p => p.role === 'BEAUTY' && p.isAlive);
+
+                // 1. Красотка ТОЛЬКО блокирует способность (алиби/лечение НЕ дает!)
+                if (beautyTargetId) {
+                    const target = players.find(p => p.id === beautyTargetId);
+                    if (target) {
+                        if (target.role === 'MAFIA' || target.role === 'DON') blockedRoles.push('MAFIA_GROUP');
+                        if (target.role === 'DON') blockedRoles.push('DON');
+                        if (target.role === 'SHERIFF') blockedRoles.push('SHERIFF');
+                        if (target.role === 'DOCTOR') blockedRoles.push('DOCTOR');
+                        if (target.role === 'MANIAC') blockedRoles.push('MANIAC');
+                        reports.push(`КРАСОТКА: Посетила игрока [#${target.id}] ${target.name} (Роль заблокирована)`);
+                    }
+                }
+
+                // 2. Доктор спасает от убийства (если сам Доктор не заблокирован Красоткой)
+                if (actions['DOCTOR']) {
+                    if (blockedRoles.includes('DOCTOR')) {
+                        reports.push(`СИСТЕМА: Доктор был заблокирован Красоткой и никого не вылечил!`);
+                    } else {
+                        saved.push(actions['DOCTOR']);
+                    }
+                }
+                
+                // 3. Выстрел Мафии
+                if (actions['MAFIA_GROUP']) {
+                    if (blockedRoles.includes('MAFIA_GROUP')) {
+                        reports.push(`СИСТЕМА: Красотка выбрала мафию — выстрел клана Мафии ЗАБЛОКИРОВАН!`);
+                    } else if (!saved.includes(actions['MAFIA_GROUP'])) {
+                        killed.push(actions['MAFIA_GROUP']);
+                    } else {
+                        reports.push(`СИСТЕМА: Доктор спас цель от выстрела Мафии!`);
+                    }
+                }
+
+                // 4. Выстрел Маньяка
+                if (actions['MANIAC']) {
+                    if (blockedRoles.includes('MANIAC')) {
+                        reports.push(`СИСТЕМА: Маньяк был заблокирован Красоткой!`);
+                    } else if (!saved.includes(actions['MANIAC'])) {
+                        killed.push(actions['MANIAC']);
+                    } else {
+                        reports.push(`СИСТЕМА: Доктор спас цель от Маньяка!`);
+                    }
+                }
+
+                // 5. Смерть Красотки при убийстве того, к кому она пришла в дом
+                if (beautyTargetId && beautyPlayer) {
+                    if (killed.includes(beautyTargetId) && !killed.includes(beautyPlayer.id)) {
+                        // Если саму Красотку случайно не лечил Доктор в эту же ночь
+                        if (!saved.includes(beautyPlayer.id)) {
+                            killed.push(beautyPlayer.id);
+                            const victimObj = players.find(p => p.id === beautyTargetId);
+                            reports.push(`СИСТЕМА: Красотка (${beautyPlayer.name}) находилась в доме жертвы (${victimObj?.name}) и погибла вместе с ней!`);
+                        }
+                    }
+                }
+
+                let nextPlayers = [...players];
+
+                // 6. Результаты проверок Шерифа и Дона
+                if (actions['SHERIFF']) {
+                    if (blockedRoles.includes('SHERIFF')) {
+                        reports.push(`ШЕРИФ: [В БЛОКЕ] Проверка не состоялась из-за визита Красотки.`);
+                    } else {
+                        const p = nextPlayers.find(p => p.id === actions['SHERIFF']);
+                        if (p) {
+                            const isMafia = p.role === 'MAFIA' || p.role === 'DON';
+                            reports.push(`ШЕРИФ: Проверил [#${p.id}] ${p.name} — ${isMafia ? '👍 ЧЕРНЫЙ (МАФИЯ)' : '👎 КРАСНЫЙ (МИРНЫЙ)'}`);
+                            nextPlayers = nextPlayers.map(pl => pl.id === p.id ? { ...pl, knownToSheriff: true } : pl);
+                        }
+                    }
+                }
+                
+                if (actions['DON']) {
+                    if (blockedRoles.includes('DON')) {
+                        reports.push(`ДОН: [В БЛОКЕ] Проверка не состоялась из-за визита Красотки.`);
+                    } else {
+                        const p = nextPlayers.find(p => p.id === actions['DON']);
+                        if (p) {
+                            const isSheriff = p.role === 'SHERIFF';
+                            reports.push(`ДОН: Проверил [#${p.id}] ${p.name} — ${isSheriff ? '👍 ДА (ШЕРИФ)' : '👎 НЕТ (НЕ ШЕРИФ)'}`);
+                            nextPlayers = nextPlayers.map(pl => pl.id === p.id ? { ...pl, knownToDon: true } : pl);
+                        }
+                    }
+                }
+
+                const uniqueKilled = [...new Set(killed)];
+                nextPlayers = nextPlayers.map(p => uniqueKilled.includes(p.id) ? { ...p, isAlive: false, isExposed: true } : p);
+                setPlayers(nextPlayers);
+                
+                const killedNames = uniqueKilled.map(id => {
+                    const pl = nextPlayers.find(p => p.id === id);
+                    return pl ? `#${pl.id} ${pl.name}` : '';
+                });
+
+                if (killedNames.length > 0) {
+                    logEvent(`Убиты ночью: ${killedNames.join(', ')}`, 'danger');
+                } else {
+                    logEvent('Ночь прошла без жертв.', 'success');
+                }
+                reports.forEach(r => logEvent(r, 'night'));
+
+                const win = checkWin(nextPlayers);
+                if (win) triggerSound('victory');
+                
+                setBriefingData({ killedNames, reports, gameOver: win });
+                setPhase(PHASES.BRIEFING);
+            };
+
+            // Проверка для подсказки ведущему: заблокирована ли текущая ночная роль Красоткой
+            const isCurrentNightRoleBlocked = useMemo(() => {
+                if (phase !== PHASES.NIGHT || !nightOrder[nightStep]) return false;
+                const bId = nightActions['BEAUTY'];
+                if (!bId) return false;
+                const bTarget = players.find(p => p.id === bId);
+                if (!bTarget) return false;
+                const curRole = nightOrder[nightStep].role;
+                if (curRole === 'MAFIA_GROUP' && (bTarget.role === 'MAFIA' || bTarget.role === 'DON')) return true;
+                if (curRole === bTarget.role) return true;
+                return false;
+            }, [phase, nightStep, nightActions, players]);
+
+            return (
+                <div className="min-h-screen pb-40 font-sans relative">
+                    {/* АТМОСФЕРНЫЙ ФОН */}
+                    <div className="fixed inset-0 pointer-events-none z-[-1] flex items-center justify-center overflow-hidden">
+                        <div className="absolute inset-0 bg-grid opacity-30" />
+                        <div className={`absolute w-[95vw] h-[95vw] rounded-full blur-[150px] transition-colors duration-1000 opacity-20 ${
+                            phase === PHASES.NIGHT ? 'bg-indigo-900' : phase === PHASES.VOTING ? 'bg-rose-900' : 'bg-indigo-600'
+                        } animate-spin-slow`} />
+                        <div className={`absolute right-[-20%] bottom-[-20%] w-[75vw] h-[75vw] rounded-full blur-[130px] transition-colors duration-1000 opacity-20 ${
+                            phase === PHASES.NIGHT ? 'bg-fuchsia-900' : 'bg-rose-600'
+                        }`} />
+                    </div>
+
+                    {/* ================= МОДАЛЬНОЕ ОКНО: АУДИО-СТУДИЯ ================= */}
+                    {showAudioStudio && (
+                        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+                            <div className="omni-glass rounded-[2.5rem] max-w-3xl w-full max-h-[90vh] flex flex-col border border-indigo-500/30 overflow-hidden shadow-[0_0_80px_rgba(99,102,241,0.25)]">
+                                <div className="p-6 sm:p-8 border-b border-white/10 flex justify-between items-center bg-slate-900/60">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                                            <Icon name="Headphones" size={26} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl sm:text-2xl font-black text-white tracking-wide uppercase">Аудио-Студия Mafia OS</h3>
+                                            <p className="text-xs text-slate-400">Настройка фоновой музыки и индивидуальных тем выходов ролей</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => { setPreviewTrackKey(null); setShowAudioStudio(false); }} className="p-3 rounded-2xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition">
+                                        <Icon name="X" size={22} />
+                                    </button>
+                                </div>
+
+                                <div className="p-6 sm:p-8 overflow-y-auto space-y-6 flex-1">
+                                    {/* Ползунки громкости и тумблеры */}
+                                    <div className="grid sm:grid-cols-2 gap-4">
+                                        <div className="p-5 rounded-3xl bg-slate-900/80 border border-white/10 space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-bold text-sm text-indigo-300 uppercase tracking-wider">🎵 Фоновая музыка</span>
+                                                <button onClick={() => setBgMusicEnabled(!bgMusicEnabled)} className={`px-3 py-1 rounded-xl text-xs font-black uppercase transition ${bgMusicEnabled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'}`}>
+                                                    {bgMusicEnabled ? 'ВКЛЮЧЕНА' : 'ВЫКЛЮЧЕНА'}
+                                                </button>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <Icon name="Volume2" size={18} className="text-slate-400" />
+                                                <input type="range" min="0" max="1" step="0.05" value={bgVolume} onChange={(e) => setBgVolume(parseFloat(e.target.value))} className="w-full accent-indigo-500 cursor-pointer" />
+                                                <span className="font-tech text-xs text-slate-300 w-10 text-right">{Math.round(bgVolume * 100)}%</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-5 rounded-3xl bg-slate-900/80 border border-white/10 space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-bold text-sm text-fuchsia-300 uppercase tracking-wider">🎭 Музыка ролей (Ночь)</span>
+                                                <button onClick={() => setRoleMusicEnabled(!roleMusicEnabled)} className={`px-3 py-1 rounded-xl text-xs font-black uppercase transition ${roleMusicEnabled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'}`}>
+                                                    {roleMusicEnabled ? 'ВКЛЮЧЕНА' : 'ВЫКЛЮЧЕНА'}
+                                                </button>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <Icon name="Music" size={18} className="text-slate-400" />
+                                                <input type="range" min="0" max="1" step="0.05" value={roleVolume} onChange={(e) => setRoleVolume(parseFloat(e.target.value))} className="w-full accent-fuchsia-500 cursor-pointer" />
+                                                <span className="font-tech text-xs text-slate-300 w-10 text-right">{Math.round(roleVolume * 100)}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Список треков с возможностью загрузить свой файл */}
+                                    <div className="space-y-3">
+                                        <div className="text-xs font-black uppercase tracking-widest text-slate-400">Аудиофайлы по ролям (можно выбрать файлы с устройства или прописать в коде):</div>
+                                        {Object.entries(tracks).map(([key, item]) => {
+                                            const isPreviewing = previewTrackKey === key;
+                                            return (
+                                                <div key={key} className="p-4 rounded-2xl omni-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-white/5">
+                                                    <div className="space-y-1">
+                                                        <div className="font-black text-white text-base flex items-center gap-2">
+                                                            {key === 'BACKGROUND' ? <span className="w-2.5 h-2.5 rounded-full bg-indigo-400"/> : <span className="w-2.5 h-2.5 rounded-full bg-fuchsia-400"/>}
+                                                            {item.title}
+                                                        </div>
+                                                        <div className="font-tech text-xs text-slate-400 truncate max-w-md">
+                                                            Путь / Файл: <span className="text-indigo-300">{item.fileName || item.src}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2">
+                                                        {key !== 'BACKGROUND' && (
+                                                            <button 
+                                                                onClick={() => setPreviewTrackKey(isPreviewing ? null : key)}
+                                                                className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition border ${isPreviewing ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-white/5 hover:bg-white/15 text-slate-300 border-white/10'}`}
+                                                            >
+                                                                <Icon name={isPreviewing ? "Pause" : "Play"} size={14} />
+                                                                {isPreviewing ? 'Стоп' : 'Тест'}
+                                                            </button>
+                                                        )}
+                                                        <label className="cursor-pointer px-4 py-2.5 rounded-xl bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/40 text-indigo-200 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition">
+                                                            <Icon name="Upload" size={14} />
+                                                            Выбрать MP3
+                                                            <input type="file" accept="audio/*" onChange={(e) => handleFileUpload(key, e)} className="hidden" />
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ================= БОКОВОЙ ТЕРМИНАЛ ЛОГОВ ================= */}
+                    <div className={`fixed inset-y-0 right-0 w-[400px] max-w-[90vw] omni-glass z-[200] transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col border-l border-white/10 ${showLog ? 'translate-x-0' : 'translate-x-full'}`}>
+                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-slate-900/50">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                                    <Icon name="Database" size={20}/>
+                                </div>
+                                <span className="font-tech font-bold text-lg tracking-wider uppercase text-white">Журнал событий</span>
+                            </div>
+                            <button onClick={() => setShowLog(false)} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition">
+                                <Icon name="X" size={20}/>
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                            {gameLog.length === 0 && (
+                                <div className="h-full flex flex-col items-center justify-center text-slate-500 opacity-50 space-y-4">
+                                    <Icon name="Terminal" size={48} />
+                                    <p className="font-tech text-sm uppercase tracking-widest">Ожидание событий...</p>
+                                </div>
+                            )}
+                            {gameLog.map(item => (
+                                <div key={item.id} className="animate-fade-in p-4 rounded-2xl bg-slate-900/60 border border-white/5 flex flex-col gap-2 relative overflow-hidden">
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${item.type === 'danger' ? 'bg-rose-500' : item.type === 'success' ? 'bg-emerald-500' : item.type === 'warning' ? 'bg-amber-500' : item.type === 'night' ? 'bg-indigo-500' : 'bg-slate-500'}`} />
+                                    <div className="flex justify-between items-center text-[10px] font-tech text-slate-400 uppercase tracking-widest pl-2">
+                                        <span>День {item.day}</span>
+                                        <span>{item.time}</span>
+                                    </div>
+                                    <div className={`font-semibold text-sm pl-2 leading-relaxed ${
+                                        item.type === 'danger' ? 'text-rose-200' :
+                                        item.type === 'success' ? 'text-emerald-200' :
+                                        item.type === 'warning' ? 'text-amber-200' :
+                                        item.type === 'night' ? 'text-indigo-200' : 'text-slate-200'
+                                    }`}>
+                                        {item.text}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    {showLog && <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[190]" onClick={() => setShowLog(false)} />}
+
+                    <div className="max-w-[1320px] mx-auto p-3 sm:p-6 h-full flex flex-col relative z-10">
+                        
+                        {/* ================= ПАНЕЛЬ НАСТРОЙКИ ИГРЫ (SETUP) ================= */}
+                        {phase === PHASES.SETUP && (
+                            <div className="max-w-3xl mx-auto w-full space-y-8 pt-6 sm:pt-12 animate-fade-in">
+                                <div className="text-center space-y-4 animate-slide-up">
+                                    <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 text-xs font-black tracking-[0.2em] uppercase shadow-[0_0_25px_rgba(99,102,241,0.25)]">
+                                        <Icon name="Sparkles" size={14} /> Masterpiece Host Edition
+                                    </div>
+                                    <h1 className="text-5xl sm:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-slate-100 to-slate-400">
+                                        MAFIA <span className="text-transparent bg-clip-text bg-gradient-to-br from-indigo-400 to-rose-400">OS</span>
+                                    </h1>
+
+                                    {/* Быстрая панель управления музыкой прямо на старте */}
+                                    <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                                        <button onClick={() => { haptic('light'); setBgMusicEnabled(!bgMusicEnabled); }} className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border transition ${bgMusicEnabled ? 'bg-indigo-600/25 border-indigo-500/50 text-indigo-200 shadow-[0_0_20px_rgba(99,102,241,0.3)]' : 'bg-slate-900/70 border-white/10 text-slate-500'}`}>
+                                            <Icon name={bgMusicEnabled ? "Volume2" : "VolumeX"} size={16} />
+                                            Фон: {bgMusicEnabled ? 'ВКЛ' : 'ВЫКЛ'}
+                                        </button>
+                                        <button onClick={() => { haptic('light'); setRoleMusicEnabled(!roleMusicEnabled); }} className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border transition ${roleMusicEnabled ? 'bg-fuchsia-600/25 border-fuchsia-500/50 text-fuchsia-200 shadow-[0_0_20px_rgba(217,70,239,0.3)]' : 'bg-slate-900/70 border-white/10 text-slate-500'}`}>
+                                            <Icon name="Music" size={16} />
+                                            Музыка ролей: {roleMusicEnabled ? 'ВКЛ' : 'ВЫКЛ'}
+                                        </button>
+                                        <button onClick={() => setShowAudioStudio(true)} className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/15 text-white transition">
+                                            <Icon name="Headphones" size={16} />
+                                            Аудиотека
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="omni-glass rounded-[2.5rem] p-6 sm:p-10 space-y-8 relative overflow-hidden animate-scale-up border-t-2 border-t-indigo-500/20">
+                                    <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-white/10">
+                                        <div>
+                                            <div className="text-[11px] text-indigo-400 font-black uppercase tracking-[0.2em] mb-1">Всего за столом</div>
+                                            <div className="text-4xl font-black text-white font-tech">{totalPlayers} ИГРОКОВ</div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-white/10">
+                                                <button onClick={() => {haptic(); triggerSound('click'); setDeck(p => ({...p, CITIZEN: Math.max(0, p.CITIZEN - 1)}))}} className="w-12 h-12 rounded-xl bg-white/5 hover:bg-white/20 flex items-center justify-center text-2xl font-bold transition text-slate-300 hover:text-white">-</button>
+                                                <button onClick={() => {haptic(); triggerSound('click'); setDeck(p => ({...p, CITIZEN: p.CITIZEN + 1}))}} className="w-12 h-12 rounded-xl bg-white/5 hover:bg-white/20 flex items-center justify-center text-2xl font-bold transition text-slate-300 hover:text-white">+</button>
+                                            </div>
+                                            <button onClick={autoBalance} className="px-5 py-4 rounded-2xl bg-indigo-600/20 hover:bg-indigo-500/40 border border-indigo-500/40 text-indigo-300 font-black transition text-xs uppercase tracking-widest flex items-center gap-2">
+                                                <Icon name="Wand2" size={18} /> Авто-баланс
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="relative z-10 grid sm:grid-cols-2 gap-8">
+                                        {/* БАЗОВЫЕ РОЛИ (ТОЛЬКО МАФИЯ И МИРНЫЕ С КНОПКАМИ - / +) */}
+                                        <div className="space-y-4">
+                                            <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-slate-400"/> Основные составы
+                                            </div>
+                                            {['MAFIA', 'CITIZEN'].map(rKey => (
+                                                <div key={rKey} className="flex items-center justify-between p-4 rounded-3xl bg-slate-900/60 border border-white/5">
+                                                    <div>
+                                                        <span className={`font-black text-lg block ${ROLES[rKey].color}`}>{ROLES[rKey].name}</span>
+                                                        <span className="text-[10px] text-slate-500 uppercase tracking-wider">Количество карт</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button onClick={() => {haptic('light'); triggerSound('click'); setDeck(p => ({...p, [rKey]: Math.max(0, p[rKey] - 1)}))}} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/20 flex items-center justify-center text-xl font-bold transition text-slate-300 hover:text-white">-</button>
+                                                        <span className="font-tech font-black text-xl bg-slate-950 w-12 text-center py-2 rounded-xl border border-white/10 text-white">{deck[rKey]}</span>
+                                                        <button onClick={() => {haptic('light'); triggerSound('click'); setDeck(p => ({...p, [rKey]: p[rKey] + 1}))}} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/20 flex items-center justify-center text-xl font-bold transition text-slate-300 hover:text-white">+</button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* АКТИВНЫЕ РОЛИ (ВКЛЮЧАЯ ДОНА И ШЕРИФА) */}
+                                        <div className="space-y-3">
+                                            <div className="text-[11px] font-black text-rose-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"/> Специальные роли (Вкл / Выкл)
+                                            </div>
+                                            {['DON', 'SHERIFF', 'DOCTOR', 'MANIAC', 'BEAUTY'].map(rKey => (
+                                                <div key={rKey} className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/60 border border-white/5">
+                                                    <span className={`font-bold text-base ${ROLES[rKey].color}`}>{ROLES[rKey].name}</span>
+                                                    <button onClick={() => {haptic('medium'); triggerSound('hologram'); setDeck(p => ({...p, [rKey]: p[rKey] === 0 ? 1 : 0}))}} 
+                                                        className={`w-14 h-8 rounded-full relative transition-all duration-300 border border-white/10 ${deck[rKey] > 0 ? 'bg-indigo-600 shadow-[0_0_20px_rgba(79,70,229,0.6)]' : 'bg-slate-800'}`}>
+                                                        <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform duration-300 ${deck[rKey] > 0 ? 'translate-x-6' : ''}`} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <button onClick={startGame} className="relative z-10 w-full py-6 rounded-3xl bg-white text-slate-950 font-black text-xl tracking-[0.25em] uppercase transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] shadow-[0_0_50px_rgba(255,255,255,0.25)] flex items-center justify-center gap-3">
+                                        <span>Распределить роли</span>
+                                        <Icon name="Play" size={24} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ================= КИНЕМАТОГРАФИЧНАЯ РАЗДАЧА ================= */}
+                        {phase === PHASES.DISTRIBUTION && (
+                            <div className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-slate-950/95 backdrop-blur-xl">
+                                <Icon name="Database" size={72} className="text-indigo-500 animate-bounce mb-6 drop-shadow-[0_0_30px_rgba(99,102,241,0.8)]" />
+                                <h2 className="text-4xl sm:text-5xl font-black text-white tracking-widest uppercase animate-pulse text-center px-4">Генерация Матрицы</h2>
+                                <div className="mt-8 flex gap-3">
+                                    {[1,2,3,4,5].map(i => (
+                                        <div key={i} className="w-12 h-16 rounded-xl bg-indigo-500/20 border border-indigo-400/50 shadow-[0_0_20px_rgba(99,102,241,0.5)] animate-deal-cards" style={{animationDelay: `${i * 0.12}s`}}></div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ================= ЭКРАН ИМЕН И РАСПРЕДЕЛЕНИЯ РОЛЕЙ (NAME SETUP) ================= */}
+                        {phase === PHASES.NAME_SETUP && (
+                            <div className="max-w-5xl mx-auto w-full space-y-6 pt-4 sm:pt-8 animate-fade-in flex-1">
+                                <div className="omni-glass rounded-[2rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-indigo-500/30">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3.5 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-400">
+                                            <Icon name="UserCheck" size={28} />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">Регистрация игроков</h2>
+                                            <p className="text-xs text-indigo-300 font-bold uppercase tracking-widest">Введите имена и проверьте распределение ролей</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                                        <button onClick={() => setHideRolesInSetup(!hideRolesInSetup)} className="px-4 py-3 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-black uppercase tracking-wider flex items-center gap-2 text-slate-200 transition">
+                                            <Icon name={hideRolesInSetup ? "Eye" : "EyeOff"} size={16} />
+                                            {hideRolesInSetup ? 'Показать роли' : 'Скрыть роли'}
+                                        </button>
+                                        <button onClick={reshuffleRolesInSetup} className="px-4 py-3 rounded-2xl bg-indigo-600/20 hover:bg-indigo-600/35 border border-indigo-500/40 text-xs font-black uppercase tracking-wider flex items-center gap-2 text-indigo-300 transition">
+                                            <Icon name="Shuffle" size={16} />
+                                            Перемешать
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-24">
+                                    {players.map(p => (
+                                        <div key={p.id} className="p-5 rounded-[2rem] omni-card border border-white/10 flex flex-col gap-3 relative overflow-hidden">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-tech text-xs font-black text-slate-300 bg-slate-950 px-3 py-1.5 rounded-xl border border-white/10">
+                                                    Слот #{p.id.toString().padStart(2, '0')}
+                                                </span>
+                                                {!hideRolesInSetup ? (
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border ${ROLES[p.role].bg} ${ROLES[p.role].color} ${ROLES[p.role].border}`}>
+                                                        {ROLES[p.role].name}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-white/10 bg-slate-900 text-slate-500">
+                                                        Скрыто
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <input 
+                                                value={p.name} 
+                                                onChange={(e) => handleNameChange(p.id, e.target.value)}
+                                                onFocus={(e) => { e.target.select(); haptic('light'); }}
+                                                className="w-full bg-slate-950/90 font-bold text-lg text-white outline-none px-4 py-3 rounded-2xl border border-white/10 focus:border-indigo-500 transition-all"
+                                                placeholder={`Игрок ${p.id}`}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                <div className="fixed bottom-0 inset-x-0 pb-6 pt-10 px-4 bg-gradient-to-t from-black via-black/90 to-transparent z-[100] flex justify-center pointer-events-none">
+                                    <button onClick={beginDayOne} className="pointer-events-auto max-w-2xl w-full py-5 sm:py-6 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-black text-lg sm:text-xl tracking-[0.2em] uppercase transition-all transform active:scale-95 shadow-[0_15px_45px_rgba(99,102,241,0.5)] border border-indigo-400 flex items-center justify-center gap-3">
+                                        <Icon name="Sun" size={24} />
+                                        <span>Перейти в День 1</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ================= ВЕРХНИЙ ИГРОВОЙ HUD (С РАЗДЕЛЬНЫМИ КНОПКАМИ МУЗЫКИ) ================= */}
+                        {phase !== PHASES.SETUP && phase !== PHASES.DISTRIBUTION && phase !== PHASES.NAME_SETUP && (
+                            <div className="space-y-4 mb-6 animate-fade-in">
+                                <div className="omni-glass rounded-[2rem] p-4 sm:p-5 flex flex-col lg:flex-row items-center justify-between gap-4 border-t border-indigo-500/20">
+                                    
+                                    {/* Левый блок: Отмена + Независимые переключатели Фоновой музыки, Музыки Ролей и Студии */}
+                                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 w-full lg:w-auto">
+                                        <button onClick={undo} disabled={history.length === 0} title="Отменить действие" className={`p-3 rounded-2xl transition ${history.length > 0 ? 'bg-white/10 hover:bg-white/20 text-white border border-white/10' : 'bg-slate-900/50 text-slate-700'}`}>
+                                            <Icon name="RotateCcw" size={18} />
+                                        </button>
+
+                                        {/* Кнопка ВКЛ/ВЫКЛ Фоновой музыки */}
+                                        <button 
+                                            onClick={() => { haptic('light'); setBgMusicEnabled(!bgMusicEnabled); }} 
+                                            className={`px-3.5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition border ${bgMusicEnabled ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'bg-slate-900/60 text-slate-500 border-white/5'}`}
+                                        >
+                                            <Icon name={bgMusicEnabled ? "Volume2" : "VolumeX"} size={16} />
+                                            <span>Фон</span>
+                                        </button>
+
+                                        {/* Кнопка ВКЛ/ВЫКЛ Музыки ролей */}
+                                        <button 
+                                            onClick={() => { haptic('light'); setRoleMusicEnabled(!roleMusicEnabled); }} 
+                                            className={`px-3.5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition border ${roleMusicEnabled ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40 shadow-[0_0_15px_rgba(217,70,239,0.2)]' : 'bg-slate-900/60 text-slate-500 border-white/5'}`}
+                                        >
+                                            <Icon name="Music" size={16} />
+                                            <span>Роли</span>
+                                        </button>
+
+                                        {/* Кнопка открытия Аудио-Студии */}
+                                        <button onClick={() => setShowAudioStudio(true)} title="Открыть Аудиотеку" className="p-3 rounded-2xl bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 transition">
+                                            <Icon name="Headphones" size={18} />
+                                        </button>
+
+                                        {/* Кнопка логов */}
+                                        <button onClick={() => setShowLog(true)} title="Журнал игры" className="p-3 rounded-2xl bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 transition">
+                                            <Icon name="Terminal" size={18} />
+                                        </button>
+                                    </div>
+
+                                    {/* Центральный индикатор фазы */}
+                                    <div className="text-center flex-1">
+                                        <div className="text-[10px] font-black tracking-[0.25em] uppercase text-indigo-400 mb-1 flex items-center justify-center gap-2">
+                                            <Icon name={phase === PHASES.NIGHT ? "Moon" : "Sun"} size={14} />
+                                            {phase === PHASES.DAY ? `День ${dayCount}` : phase === PHASES.NIGHT ? `Ночь ${dayCount}` : phase === PHASES.VOTING ? 'Суд города' : phase === PHASES.GAME_OVER ? 'Финал игры' : 'Утренняя сводка'}
+                                        </div>
+                                        <div className="text-xl sm:text-2xl font-black text-white tracking-wide">
+                                            {phase === PHASES.NIGHT ? nightOrder[nightStep]?.action : phase === PHASES.VOTING ? 'Голосование' : phase === PHASES.DAY ? 'Обсуждение за столом' : phase === PHASES.GAME_OVER ? 'Итоги партии' : 'Брифинг'}
+                                        </div>
+                                    </div>
+
+                                    {/* Правый блок: Счетчик живых Сил Города и Мафии */}
+                                    <div className="flex items-center gap-2.5 bg-slate-950 p-2 rounded-2xl border border-white/10 text-sm font-tech w-full lg:w-auto justify-center">
+                                        <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-400 font-black border border-emerald-500/30">
+                                            <Icon name="Shield" size={15}/> Мирные: {stats.city}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-500/15 text-rose-400 font-black border border-rose-500/30">
+                                            <Icon name="Flame" size={15}/> Мафия: {stats.mafia}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Таймер речи для Дневной фазы */}
+                                {phase === PHASES.DAY && (
+                                    <div className="omni-card rounded-3xl p-4 sm:p-5 relative overflow-hidden">
+                                        <div className="flex flex-wrap justify-between items-center relative z-10 gap-4 mb-3">
+                                            <div className="flex items-center gap-2">
+                                                {[60, 30, 15].map(s => (
+                                                    <button key={s} onClick={() => startTimer(s, speakerId)} className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-black text-slate-200 transition border border-white/10">
+                                                        {s} сек
+                                                    </button>
+                                                ))}
+                                                <button onClick={nextAliveSpeaker} className="px-4 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-xs font-black text-indigo-300 transition border border-indigo-500/30 flex items-center gap-1.5">
+                                                    <Icon name="SkipForward" size={14} /> След. спикер
+                                                </button>
+                                            </div>
+
+                                            <div className="flex items-center gap-4 ml-auto">
+                                                {speakerId && (
+                                                    <span className="text-xs font-bold text-indigo-300 bg-indigo-950/80 px-3 py-1.5 rounded-xl border border-indigo-500/30">
+                                                        Говорит: #{speakerId} {players.find(p => p.id === speakerId)?.name}
+                                                    </span>
+                                                )}
+                                                <div className={`font-tech text-4xl sm:text-5xl font-black tracking-tighter ${timeLeft <= 10 && timeLeft > 0 ? 'text-rose-500 animate-heartbeat' : 'text-white'}`}>
+                                                    {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                                                </div>
+                                                <div className="flex gap-1.5">
+                                                    <button onClick={() => {haptic('light'); triggerSound('click'); setIsTimerRunning(!isTimerRunning)}} className={`p-3 rounded-xl transition ${isTimerRunning ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'}`}>
+                                                        <Icon name={isTimerRunning ? "Pause" : "Play"} size={18} />
+                                                    </button>
+                                                    <button onClick={() => {haptic('light'); triggerSound('click'); setIsTimerRunning(false); setTimeLeft(0); setSpeakerId(null);}} className="p-3 rounded-xl bg-rose-500/15 text-rose-400 hover:bg-rose-500/30 transition border border-rose-500/30">
+                                                        <Icon name="Square" size={18} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5">
+                                            <div className={`h-full transition-all duration-1000 ease-linear rounded-full ${timeLeft <= 10 ? 'bg-rose-500' : 'bg-indigo-500'}`} style={{ width: `${(timeLeft / maxTimeRef.current) * 100}%` }} />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ================= 3. ДНЕВНАЯ СЕТКА ИГРОКОВ (3D КАРТОЧКИ + ФОЛЫ) ================= */}
+                        {phase === PHASES.DAY && (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4 animate-fade-in flex-1">
+                                {players.map(p => (
+                                    <div key={p.id} className="player-card-container h-[240px]">
+                                        <div className={`player-card-flipper ${p.isExposed ? 'flipped' : ''}`}>
+                                            
+                                            {/* ЛИЦЕВАЯ СТОРОНА (РОЛЬ СКРЫТА) */}
+                                            <div className={`card-front flex flex-col justify-between p-4 transition-all duration-300 ${
+                                                !p.isAlive ? 'opacity-35 grayscale bg-slate-950/90 border border-slate-800' :
+                                                speakerId === p.id ? 'omni-glass ring-2 ring-indigo-500 shadow-[0_0_35px_rgba(99,102,241,0.35)]' :
+                                                nominations.includes(p.id) ? 'omni-glass ring-2 ring-rose-500 shadow-[0_0_25px_rgba(225,29,72,0.3)]' : 'omni-card omni-card-hover'
+                                            }`}>
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <span className="font-tech text-xs font-black text-slate-300 bg-slate-950 px-2.5 py-1 rounded-lg border border-white/10">
+                                                            #{p.id.toString().padStart(2, '0')}
+                                                        </span>
+                                                        <div className="flex items-center gap-1">
+                                                            {p.isAlive && (
+                                                                <button onClick={() => toggleSpeaker(p.id)} title="Дать слово (60с)" className={`p-2 rounded-xl transition ${speakerId === p.id ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}>
+                                                                    <Icon name="Mic" size={16} />
+                                                                </button>
+                                                            )}
+                                                            <button onClick={() => cyclePlayerStatus(p.id)} title="Убить / Оживить" className="p-2 rounded-xl text-slate-400 hover:bg-white/10 hover:text-rose-400 transition">
+                                                                <Icon name="Skull" size={16} />
+                                                            </button>
+                                                            <button onClick={() => {haptic('medium'); triggerSound('flip'); setPlayers(players.map(pl => pl.id === p.id ? {...pl, isExposed: true} : pl))}} title="Посмотреть роль" className="p-2 rounded-xl text-slate-400 hover:bg-white/10 hover:text-indigo-300 transition">
+                                                                <Icon name="Eye" size={16} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <input 
+                                                        value={p.name} 
+                                                        onChange={(e) => handleNameChange(p.id, e.target.value)}
+                                                        disabled={!p.isAlive}
+                                                        className="w-full bg-transparent font-black text-lg text-center text-white outline-none py-1 border-b border-transparent focus:border-indigo-500/50 mb-2 truncate"
+                                                    />
+
+                                                    {/* Счетчик фолов и метки проверок */}
+                                                    <div className="flex items-center justify-between px-1 my-2">
+                                                        {p.isAlive ? (
+                                                            <button onClick={() => addFoul(p.id)} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950/80 border border-white/5 hover:border-amber-500/40 transition" title="Добавить фол">
+                                                                <span className="text-[10px] font-black uppercase text-slate-400">Фол:</span>
+                                                                <div className="flex gap-1">
+                                                                    {[1, 2, 3, 4].map(f => (
+                                                                        <span key={f} className={`w-2 h-2 rounded-full ${p.fouls >= f ? (p.fouls === 4 ? 'bg-rose-500 animate-ping' : 'bg-amber-400') : 'bg-slate-800'}`} />
+                                                                    ))}
+                                                                </div>
+                                                            </button>
+                                                        ) : <span className="text-[10px] font-black uppercase text-rose-500">Вне игры</span>}
+
+                                                        <div className="flex gap-1">
+                                                            {p.knownToSheriff && <span title="Проверен Шерифом" className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400"><Icon name="Shield" size={12} /></span>}
+                                                            {p.knownToDon && <span title="Проверен Доном" className="w-6 h-6 rounded-lg bg-red-600/20 border border-red-600/40 flex items-center justify-center font-tech text-[10px] font-black text-red-400">D</span>}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {p.isAlive && (
+                                                    <button onClick={() => toggleNomination(p.id)} className={`w-full py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.18em] transition-all ${
+                                                        nominations.includes(p.id) ? 'bg-rose-600 text-white shadow-[0_0_20px_rgba(225,29,72,0.5)] border border-rose-400' : 'bg-slate-900/90 text-slate-300 hover:bg-slate-800 hover:text-white border border-white/5'
+                                                    }`}>
+                                                        {nominations.includes(p.id) ? 'В суде (Снять)' : 'Выставить'}
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* ОБРАТНАЯ СТОРОНА (РОЛЬ РАСКРЫТА) */}
+                                            <div className={`card-back flex flex-col justify-between p-4 border-2 ${ROLES[p.role].bg} ${ROLES[p.role].border} backdrop-blur-xl`}>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-tech text-xs text-white/70 bg-black/40 px-2.5 py-1 rounded-lg border border-white/10">#{p.id.toString().padStart(2, '0')}</span>
+                                                    <button onClick={() => {haptic('light'); triggerSound('flip'); setPlayers(players.map(pl => pl.id === p.id ? {...pl, isExposed: false} : pl))}} className="p-2 rounded-xl text-white/70 hover:text-white bg-black/30">
+                                                        <Icon name="EyeOff" size={16} />
+                                                    </button>
+                                                </div>
+                                                <div className="text-center space-y-2 my-auto">
+                                                    <div className="font-black text-xl text-white truncate px-2">{p.name}</div>
+                                                    <div className={`inline-block text-base font-black uppercase tracking-widest px-4 py-1.5 rounded-xl border bg-black/50 ${ROLES[p.role].color} ${ROLES[p.role].border}`}>
+                                                        {ROLES[p.role].name}
+                                                    </div>
+                                                </div>
+                                                <div className="text-center">
+                                                    {!p.isAlive ? (
+                                                        <span className="text-rose-400 font-black text-xs uppercase tracking-widest"><Icon name="Skull" size={14} className="inline mr-1"/> Покинул игру</span>
+                                                    ) : (
+                                                        <span className="text-emerald-300 font-bold text-xs uppercase tracking-widest">Активен за столом</span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* ================= 4. ФАЗА ГОЛОСОВАНИЯ ================= */}
+                        {phase === PHASES.VOTING && (
+                            <div className="max-w-3xl mx-auto w-full space-y-4 animate-slide-up pt-2 flex-1">
+                                <div className="text-center text-xs text-indigo-300 font-black uppercase tracking-[0.2em] mb-6 bg-indigo-950/40 py-3 rounded-2xl border border-indigo-500/20">
+                                    Голосование за изгнание • Живых игроков: {stats.alive}
+                                </div>
+                                {nominations.map(id => {
+                                    const p = players.find(x => x.id === id);
+                                    const votePercentage = stats.alive > 0 ? (votes[id] / stats.alive) * 100 : 0;
+                                    return (
+                                        <div key={id} className="p-5 rounded-[2rem] omni-glass relative overflow-hidden border border-white/10">
+                                            <div className="absolute top-0 left-0 bottom-0 bg-gradient-to-r from-rose-600/25 to-transparent vote-bar-fill border-r border-rose-500/50" style={{ width: `${votePercentage}%` }} />
+                                            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                                <div className="flex items-center gap-4 w-full sm:w-auto">
+                                                    <div className="w-14 h-14 bg-slate-950 rounded-2xl flex items-center justify-center font-tech font-black text-slate-300 border border-white/10 text-lg">#{p?.id}</div>
+                                                    <div>
+                                                        <span className="text-white font-black text-2xl block">{p?.name}</span>
+                                                        <span className="text-[10px] font-black text-rose-300 uppercase tracking-widest">{votePercentage.toFixed(0)}% голосов стола</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between w-full sm:w-auto gap-4 bg-slate-950/80 rounded-2xl p-1.5 border border-white/10">
+                                                    <button onClick={() => addVote(id, -1)} className="w-14 h-14 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition font-black text-2xl flex items-center justify-center">-</button>
+                                                    <span className="font-tech text-4xl font-black text-rose-500 w-14 text-center">{votes[id]}</span>
+                                                    <button onClick={() => addVote(id, 1)} className="w-14 h-14 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition font-black text-2xl flex items-center justify-center">+</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* ================= 5. НОЧНАЯ ФАЗА (ТАЙМЛАЙН, МУЗЫКА РОЛИ И ОТКЛИК КНОПОК) ================= */}
+                        {phase === PHASES.NIGHT && nightOrder.length > 0 && (
+                            <div className="max-w-5xl mx-auto w-full animate-fade-in pt-2 flex-1">
+                                
+                                {/* Таймлайн шагов ночи + Индикатор играющего трека роли */}
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-8 bg-slate-950/70 p-3.5 rounded-3xl border border-white/10">
+                                    <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+                                        {nightOrder.map((step, idx) => (
+                                            <div key={step.role} className={`px-3.5 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all ${
+                                                idx === nightStep ? 'bg-indigo-600 text-white shadow-[0_0_20px_rgba(99,102,241,0.5)]' :
+                                                idx < nightStep ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-slate-500'
+                                            }`}>
+                                                {idx + 1}. {step.role === 'MAFIA_GROUP' ? 'Мафия' : ROLES[step.role]?.name}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Индикатор эквалайзера ролевой музыки */}
+                                    <div className="flex items-center gap-3 px-4 py-1.5 rounded-2xl bg-fuchsia-950/40 border border-fuchsia-500/30">
+                                        {roleMusicEnabled ? (
+                                            <div className="flex items-end gap-0.5 h-3.5 w-4">
+                                                <span className="w-1 bg-fuchsia-400 animate-eq-1 rounded-full"/>
+                                                <span className="w-1 bg-fuchsia-400 animate-eq-2 rounded-full"/>
+                                                <span className="w-1 bg-fuchsia-400 animate-eq-3 rounded-full"/>
+                                            </div>
+                                        ) : <Icon name="VolumeX" size={14} className="text-slate-500" />}
+                                        <span className="text-[11px] font-bold text-fuchsia-200 truncate max-w-[200px]">
+                                            {roleMusicEnabled ? (tracks[nightOrder[nightStep].role]?.title || 'Музыка роли активна') : 'Музыка ролей выкл.'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="text-center mb-10 space-y-3">
+                                    <h2 className="text-4xl sm:text-6xl font-black text-white tracking-tight">{nightOrder[nightStep].action}</h2>
+                                    <p className="text-indigo-300 font-bold tracking-[0.18em] uppercase text-xs">{nightOrder[nightStep].desc}</p>
+                                    
+                                    {/* Предупреждение ведущему, если роль уже заблокирована Красоткой */}
+                                    {isCurrentNightRoleBlocked && (
+                                        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-xs font-black uppercase tracking-wider animate-pulse">
+                                            <Icon name="Lock" size={15} /> Внимание ведущему: эта роль заблокирована Красоткой!
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Сетка выбора игроков ночью (с авто-сбросом кнопки и пальцем Вверх/Вниз/Блок) */}
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {players.filter(p => p.isAlive).map(p => {
+                                        const isAnimating = nightAnim && nightAnim.targetId === p.id;
+                                        let cardStyle = 'omni-glass border-white/10 omni-card-hover';
+                                        let statusBadge = null;
+
+                                        if (isAnimating) {
+                                            if (nightAnim.status === 'YES') {
+                                                cardStyle = 'bg-emerald-600/90 border-emerald-300 shadow-[0_0_50px_rgba(16,185,129,0.9)] scale-[1.04] z-20';
+                                                statusBadge = (
+                                                    <div className="mt-3 flex items-center justify-center gap-2 py-2 rounded-xl bg-black/40 text-white font-black text-sm uppercase tracking-widest">
+                                                        <Icon name="ThumbsUp" size={20} /> ДА (ПОДТВЕРЖДЕНО)
+                                                    </div>
+                                                );
+                                            } else if (nightAnim.status === 'NO') {
+                                                cardStyle = 'bg-rose-600/90 border-rose-300 shadow-[0_0_50px_rgba(225,29,72,0.9)] scale-[1.04] z-20';
+                                                statusBadge = (
+                                                    <div className="mt-3 flex items-center justify-center gap-2 py-2 rounded-xl bg-black/40 text-white font-black text-sm uppercase tracking-widest">
+                                                        <Icon name="ThumbsDown" size={20} /> НЕТ (МИМО)
+                                                    </div>
+                                                );
+                                            } else if (nightAnim.status === 'BLOCKED') {
+                                                cardStyle = 'bg-amber-500/90 border-amber-200 shadow-[0_0_50px_rgba(245,158,11,0.9)] scale-[1.04] z-20';
+                                                statusBadge = (
+                                                    <div className="mt-3 flex items-center justify-center gap-2 py-2 rounded-xl bg-black/50 text-white font-black text-xs uppercase tracking-widest">
+                                                        <Icon name="Lock" size={18} /> ВЫ В БЛОКЕ КРАСОТКИ
+                                                    </div>
+                                                );
+                                            } else if (nightAnim.status === 'SELECTED') {
+                                                cardStyle = 'bg-indigo-600/90 border-indigo-300 shadow-[0_0_40px_rgba(99,102,241,0.85)] scale-[1.03] z-20';
+                                                statusBadge = (
+                                                    <div className="mt-3 flex items-center justify-center gap-2 py-1.5 rounded-xl bg-black/30 text-white font-black text-xs uppercase tracking-widest">
+                                                        <Icon name="Check" size={16} /> ВЫБРАНО
+                                                    </div>
+                                                );
+                                            }
+                                        }
+
+                                        return (
+                                            <button 
+                                                key={`${nightStep}-${p.id}`} 
+                                                onClick={() => handleNightAction(p.id)} 
+                                                disabled={!!nightAnim} 
+                                                className={`p-5 rounded-[2rem] border text-left transition-all duration-300 relative overflow-hidden ${cardStyle}`}
+                                            >
+                                                <div className="flex justify-between items-center mb-3 relative z-10">
+                                                    <span className="font-tech text-xs font-black text-slate-200 bg-slate-950/90 px-3 py-1 rounded-xl border border-white/10">
+                                                        #{p.id.toString().padStart(2, '0')}
+                                                    </span>
+                                                    {/* Если проверяющий в блоке, скрываем роль на карточке в момент клика, чтобы не сбивать ведущего */}
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${
+                                                        isAnimating ? 'bg-black/40 text-white border-white/20' : `${ROLES[p.role].bg} ${ROLES[p.role].color}${ROLES[p.role].border}`
+                                                    }`}>
+                                                        {isAnimating && nightAnim.status === 'BLOCKED' ? 'СКРЫТО БЛОКОМ' : ROLES[p.role].name}
+                                                    </span>
+                                                </div>
+                                                <div className="font-black text-xl text-white truncate relative z-10">{p.name}</div>
+                                                {statusBadge}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ЕСЛИ НОЧЬЮ НЕТ АКТИВНЫХ РОЛЕЙ */}
+                        {phase === PHASES.NIGHT && nightOrder.length === 0 && (
+                            <div className="flex flex-col items-center justify-center flex-1 animate-slide-up py-16">
+                                <Icon name="AlertCircle" size={96} className="text-indigo-400 mb-6" />
+                                <h2 className="text-3xl font-black text-white tracking-wide mb-4">Нет активных ночных ролей</h2>
+                                <button onClick={() => finishNight({})} className="px-8 py-4 rounded-2xl bg-indigo-600 text-white font-black uppercase tracking-widest">
+                                    Перейти к утру
+                                </button>
+                            </div>
+                        )}
+
+                        {/* ================= 6. УТРЕННИЙ БРИФИНГ ================= */}
+                        {phase === PHASES.BRIEFING && (
+                            <div className="max-w-3xl mx-auto w-full animate-slide-up pt-4 flex-1">
+                                <div className="omni-glass rounded-[2.5rem] p-8 sm:p-10 relative overflow-hidden border border-amber-500/20">
+                                    <div className="relative z-10">
+                                        <div className="inline-flex items-center gap-2.5 bg-amber-500/15 border border-amber-500/40 px-5 py-2 rounded-full mb-8">
+                                            <Icon name="Sun" size={20} className="text-amber-400" />
+                                            <span className="text-xs font-black text-amber-300 uppercase tracking-[0.2em]">Утренняя сводка</span>
+                                        </div>
+                                        
+                                        <div className="text-white text-2xl sm:text-4xl font-black leading-tight mb-10 border-l-4 border-amber-500 pl-6 bg-slate-900/60 py-6 rounded-r-3xl">
+                                            Город просыпается.<br/>
+                                            <span className={`block mt-3 ${briefingData?.killedNames?.length > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                                {briefingData?.killedNames?.length > 0 ? `Этой ночью убиты: ${briefingData.killedNames.join(', ')}.` : 'Этой ночью никто не погиб.'}
+                                            </span>
+                                        </div>
+
+                                        {briefingData?.reports?.length > 0 && (
+                                            <div className="pt-8 border-t border-white/10 space-y-4">
+                                                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-950/60 border border-indigo-500/30 rounded-full">
+                                                    <Icon name="Shield" size={14} className="text-indigo-400"/>
+                                                    <span className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.2em]">Детали ночи (Для ведущего)</span>
+                                                </div>
+                                                <div className="grid gap-3">
+                                                    {briefingData.reports.map((report, idx) => {
+                                                        const isBlock = report.includes('ЗАБЛОКИРОВАН') || report.includes('[В БЛОКЕ]') || report.includes('погибла вместе');
+                                                        return (
+                                                            <div key={idx} className={`p-4 sm:p-5 rounded-2xl border font-bold text-sm sm:text-base flex items-center gap-4 ${isBlock ? 'bg-rose-950/50 border-rose-500/40 text-rose-200' : 'bg-indigo-950/50 border-indigo-500/40 text-indigo-200'}`}>
+                                                                <Icon name={isBlock ? "Lock" : "Eye"} size={20} className="shrink-0" />
+                                                                <span>{report}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ================= 7. ФИНАЛ ИГРЫ ================= */}
+                        {phase === PHASES.GAME_OVER && (
+                            <div className="max-w-4xl mx-auto w-full flex flex-col items-center justify-center animate-fade-in pt-10 flex-1 text-center">
+                                <div className="relative mb-10 animate-float">
+                                    <div className={`p-10 rounded-[3rem] omni-glass border ${winner === 'Победа Мафии' ? 'border-rose-500/60 text-rose-500' : 'border-emerald-500/60 text-emerald-500'}`}>
+                                        <Icon name="Trophy" size={110} />
+                                    </div>
+                                </div>
+                                
+                                <h1 className={`text-5xl sm:text-7xl font-black mb-12 uppercase tracking-tight ${
+                                    winner === 'Победа Мафии' ? 'text-rose-400' : winner === 'Победа Мирных' ? 'text-emerald-400' : 'text-white'
+                                }`}>
+                                    {winner}
+                                </h1>
+
+                                <div className="w-full omni-glass rounded-[2.5rem] p-8 border border-white/10">
+                                    <h3 className="text-left text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Итоговый список ролей</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                                        {players.map(p => (
+                                            <div key={p.id} className="bg-slate-900/80 p-4 rounded-2xl flex items-center justify-between border border-white/5">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="font-tech text-xs text-slate-400 bg-black/40 px-2.5 py-1 rounded-lg">#{p.id}</span>
+                                                    <span className={`font-black text-base ${p.isAlive ? 'text-white' : 'text-slate-500 line-through'}`}>{p.name}</span>
+                                                </div>
+                                                <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-lg border ${ROLES[p.role].bg} ${ROLES[p.role].color} ${ROLES[p.role].border}`}>
+                                                    {ROLES[p.role].name}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                    </div>
+
+                    {/* ================= НИЖНЯЯ ДОК-ПАНЕЛЬ УПРАВЛЕНИЯ ФАЗАМИ ================= */}
+                    {phase !== PHASES.SETUP && phase !== PHASES.DISTRIBUTION && phase !== PHASES.NAME_SETUP && (
+                        <div className="fixed bottom-0 inset-x-0 pb-6 pt-10 px-4 bg-gradient-to-t from-black via-black/90 to-transparent z-[100] pointer-events-none flex justify-center">
+                            <div className="pointer-events-auto max-w-2xl w-full">
+                                
+                                {phase === PHASES.DAY && (
+                                    <button onClick={endDay} className={`w-full py-5 sm:py-6 rounded-full font-black text-lg sm:text-xl tracking-[0.2em] uppercase transition-all transform active:scale-95 shadow-2xl border flex items-center justify-center gap-3 ${
+                                        nominations.length > 0 ? 'bg-gradient-to-r from-rose-700 to-rose-500 text-white border-rose-400 shadow-[0_15px_40px_rgba(225,29,72,0.45)]' : 'bg-white text-slate-950 border-white shadow-[0_15px_40px_rgba(255,255,255,0.25)]'
+                                    }`}>
+                                        <Icon name={nominations.length > 0 ? "Crosshair" : "Moon"} size={24} />
+                                        <span>{nominations.length > 0 ? `Голосование (${nominations.length} канд.)` : 'Объявить Ночь'}</span>
+                                    </button>
+                                )}
+
+                                {phase === PHASES.VOTING && (
+                                    <button onClick={calculateVoting} className="w-full py-5 sm:py-6 rounded-full bg-gradient-to-r from-rose-700 to-rose-500 text-white font-black text-lg sm:text-xl tracking-[0.2em] uppercase transition-all transform active:scale-95 shadow-[0_15px_40px_rgba(225,29,72,0.5)] border border-rose-400 flex items-center justify-center gap-3">
+                                        <Icon name="Check" size={24} />
+                                        <span>Зафиксировать итог суда</span>
+                                    </button>
+                                )}
+
+                                {phase === PHASES.NIGHT && (
+                                    <button onClick={() => handleNightAction(null)} disabled={!!nightAnim} className="w-full py-5 sm:py-6 rounded-full bg-slate-900/95 hover:bg-slate-800 text-white font-black text-lg sm:text-xl tracking-[0.2em] uppercase transition-all transform active:scale-95 shadow-2xl border border-white/20 disabled:opacity-40">
+                                        Пропустить ход роли
+                                    </button>
+                                )}
+
+                                {phase === PHASES.BRIEFING && (
+                                    <button onClick={() => {
+                                        saveToHistory();
+                                        haptic('medium');
+                                        triggerSound('select');
+                                        if (briefingData?.gameOver) { setWinner(briefingData.gameOver); setPhase(PHASES.GAME_OVER); } 
+                                        else { setDayCount(d => d + 1); setPhase(PHASES.DAY); }
+                                    }} className="w-full py-5 sm:py-6 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 text-slate-950 font-black text-lg sm:text-xl tracking-[0.2em] uppercase transition-all transform active:scale-95 shadow-[0_15px_40px_rgba(16,185,129,0.4)] border border-emerald-300 flex items-center justify-center gap-3">
+                                        <Icon name={briefingData?.gameOver ? "Trophy" : "Sun"} size={24} />
+                                        <span>{briefingData?.gameOver ? 'Показать Финал' : `Начать День ${dayCount + 1}`}</span>
+                                    </button>
+                                )}
+
+                                {phase === PHASES.GAME_OVER && (
+                                    <button onClick={() => {haptic('light'); triggerSound('select'); setPhase(PHASES.SETUP);}} className="w-full py-5 sm:py-6 rounded-full bg-white text-slate-950 font-black text-lg sm:text-xl tracking-[0.2em] uppercase transition-all transform active:scale-95 shadow-[0_15px_40px_rgba(255,255,255,0.25)] border border-white flex items-center justify-center gap-3">
+                                        <Icon name="RotateCcw" size={24} className="text-indigo-600" />
+                                        <span>Новая Партия</span>
+                                    </button>
+                                )}
+
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MafiaOS />);
+    </script>
+</body>
+</html>
